@@ -1,7 +1,8 @@
 module IceGauntlet {
 
 	exception Unauthorized {};
-	exception NoRoomException {};
+	exception RoomAlreadyExists {};
+	exception RoomNotExists {};
 
 	interface Authentication {
 		bool authorized = isValid(string token) throws Unauthorized;
@@ -10,10 +11,12 @@ module IceGauntlet {
 	};
 	interface RoomService {
 		string room = getRoom() throws NoRoomException; 
-		void publish(string token, string roomData) throws Unauthorized;
+		void publish(string token, string roomData) throws Unauthorized,RoomAlreadyExists;
 		bool valid = isvalid(string token);
-		void remove(string token, string roomName) throws Unauthorized, NoRoomException;
+		void remove(string token, string roomName) throws Unauthorized, RoomNotExists;
 
 	};
-	
+	interface Game {
+		string roomData = getRoom() throws RoomNotExists;
+	}
 };
