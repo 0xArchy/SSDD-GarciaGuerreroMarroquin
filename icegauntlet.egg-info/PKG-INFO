@@ -1,0 +1,19 @@
+Metadata-Version: 1.1
+Name: icegauntlet
+Version: 0.0.1
+Summary: Gauntlet online
+Home-page: UNKNOWN
+Author: Tobias Diaz
+Author-email: tobias.diaz@uclm.es
+License: GPLv3
+Description: UNKNOWN
+Keywords: gaming development
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: GPLv3 License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Games/Entertainment
+Classifier: Topic :: Games/Entertainment :: Multi-User Dungeons (MUD)
