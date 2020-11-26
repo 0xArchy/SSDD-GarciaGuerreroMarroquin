@@ -5,7 +5,7 @@ module IceGauntlet {
 	exception RoomNotExists {};
 
 	interface Authentication {
-		bool isValid(string token) throws Unauthorized;
+		bool isValid(string token);
 		string getNewToken(string user, string passHash) throws Unauthorized;
 		void changePassword(string user, string currentPassHash, string newPassHash) throws Unauthorized;
 	};
