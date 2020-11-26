@@ -11,7 +11,7 @@ module IceGauntlet {
 	};
 	interface RoomService { 
 		void publish(string token, string roomData) throws Unauthorized, RoomAlreadyExists;
-		bool isvalid(string token);
+		bool isValid(string token);
 		void remove(string token, string roomName) throws Unauthorized, RoomNotExists;
 
 	};
