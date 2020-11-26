@@ -9,8 +9,7 @@ module IceGauntlet {
 		string getNewToken(string user, string passHash) throws Unauthorized;
 		void changePassword(string user, string currentPassHash, string newPassHash) throws Unauthorized;
 	};
-	interface RoomService {
-		string getRoom(); 
+	interface RoomService { 
 		void publish(string token, string roomData) throws Unauthorized, RoomAlreadyExists;
 		bool isvalid(string token);
 		void remove(string token, string roomName) throws Unauthorized, RoomNotExists;
