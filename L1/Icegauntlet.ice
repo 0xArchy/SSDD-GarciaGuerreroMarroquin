@@ -3,6 +3,7 @@ module IceGauntlet {
 	exception Unauthorized {};
 	exception RoomAlreadyExists {};
 	exception RoomNotExists {};
+	exception InvalidRoom {};
 
 	interface Authentication {
 		bool isValid(string token);
