@@ -30,7 +30,7 @@ class Client(Ice.Application):
         except IceGauntlet.RoomAlreadyExists:
             p.failure("The room already exists")
         except IceGauntlet.InvalidRoom:
-            p.failure("The room is not valid")
+            p.failure("The roomData format is not valid")
 
 if __name__ == "__main__":
 

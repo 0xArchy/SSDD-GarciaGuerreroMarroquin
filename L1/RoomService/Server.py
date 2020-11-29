@@ -40,6 +40,8 @@ class RoomServiceI(IceGauntlet.RoomService):
             '''Now, We gonna try to put roomData into a DB file'''
             '''Build the dictionary data'''
             contain = json.loads(roomData)
+            if not contain['room'] and not contain['data']:
+                raise IceGauntlet.InvalidRoom()
             nombre = contain['room']
             data = {
                 'token': token,
