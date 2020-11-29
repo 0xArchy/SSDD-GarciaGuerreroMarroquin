@@ -26,9 +26,11 @@ class Client(Ice.Application):
             time.sleep(1)
             p.success("Done")
         except IceGauntlet.Unauthorized:
-            p.failure("Token valid")
+            p.failure("Token not valid")
         except IceGauntlet.RoomAlreadyExists:
             p.failure("The room already exists")
+        except IceGauntlet.InvalidRoom:
+            p.failure("The room is not valid")
 
 if __name__ == "__main__":
 
