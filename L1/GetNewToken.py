@@ -30,6 +30,14 @@ class Client(Ice.Application):
             p.status("Putting the token into a tokens file...")
             time.sleep(1)
 		    # escribimos el token en nuestro archivo de usuarios y tokens
+            # Si no existe creamos el fichero
+            if not os.path.exists('tokens.json'):
+                # si no existe lo creamos
+                data = {
+                    "users":[]
+                }
+                self.write_json(data)
+
             with open('tokens.json') as file:
                 data = json.load(file)
                 users = data["users"]
