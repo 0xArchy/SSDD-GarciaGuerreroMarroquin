@@ -10,6 +10,8 @@ assets/palette.json
 assets/tile.png
 assets/tile_screen.png
 assets/tutorial.json
+game/ChangePassword.py
+game/GetNewToken.py
 game/__init__.py
 game/artwork.py
 game/assets.py
