@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import Ice, sys, json, os.path, logging, signal
+import Ice, sys, json, os.path, logging, signal, random
 Ice.loadSlice('Icegauntlet.ice')
 import IceGauntlet
 
@@ -59,19 +59,21 @@ class RoomServiceI(IceGauntlet.RoomService):
 
 class GameI(IceGauntlet.Game):
 
-    def getRoom():
+    def getRoom(self,current=None):
+        map = ""
         with open(ROOMS_FILE,'r') as contents:
              data = json.load(contents)
              if len(data) == 0:
                  raise IceGauntlet.RoomNotExists()
-             size = len(data) - 1
-             lab = random.randint(0,size)
+             size = len(data)
+             lab = random.randint(0,size) - 1
              i = 0
              for room in data:
                  if i == lab:
-                     return data[room]['data']
+                     map = str(data[room]['data'])
                  else:
                      i+=1
+        return map
 
 
 class Server(Ice.Application):
@@ -93,19 +95,19 @@ class Server(Ice.Application):
         signal.signal(signal.SIGUSR1, servant.refresh)
 
         adapter = self.communicator().createObjectAdapter('RoomServiceAdapter')
-        proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
-        adapter.addDefaultServant(servant, '')
-        adapter.activate()
-        logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
-        print('Proxy del RoomService: "{}"'.format(proxy), flush=True)
+#        proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
+        proxy = adapter.addWithUUID(servant)
+#        adapter.addDefaultServant(servant)
+        #adapter.activate()
+#        logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
+#        print('Proxy del RoomService: "{}"'.format(proxy), flush=True)
 
         servantGame = GameI()
 #        signal.signal(signal.SIGUSR1, servantGame.refresh)
-        gameadapter = self.communicator().createObjectAdapter('GameAdapter')
-        proxygame = gameadapter.add(servantGame, self.communicator().stringToIdentity('default'))
-        gameadapter.addDefaultServant(servantGame, '')
-        logging.debug('AdapterGame ready, servant proxy: {}'.format(proxygame))
-        print('Proxy del Game: "{}"'.format(proxygame), flush=True)
+        proxy = adapter.addWithUUID(servantGame)
+        adapter.activate()
+        logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
+        print('Proxy"{}"'.format(proxy), flush=True)
 
         logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
@@ -116,8 +118,9 @@ class Server(Ice.Application):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
          print("usage: ./Server.py <proxy>")
+         sys.exit(0)
 
     app = Server()
     sys.exit(app.main(sys.argv))
