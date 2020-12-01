@@ -6,7 +6,7 @@ import IceGauntlet
 import os, hashlib, sys
 import getpass
 from pwn import *
-import time,json
+import time,json,random
 
 class Client(Ice.Application):
 
@@ -19,12 +19,13 @@ class Client(Ice.Application):
         #token = argv[2]
         #roomData = argv[3]
         p = log.progress("Trying to Push the Room...")
-        #time.sleep(1)
+        time.sleep(1)
         try:
-            game.getRoom()
+            room = game.getRoom()
             p.status("Getting room...")
             time.sleep(1)
             p.success("Done")
+            print(room)
         except IceGauntlet.RoomNotExists:
             p.failure("Room not exists")
 
