@@ -57,6 +57,23 @@ class RoomServiceI(IceGauntlet.RoomService):
         else:
             raise IceGauntlet.Unauthorized()
 
+class GameI(IceGauntlet.Game):
+
+    def getRoom():
+        with open(ROOMS_FILE,'r') as contents:
+             data = json.load(contents)
+             if len(data) == 0:
+                 raise IceGauntlet.RoomNotExists()
+             size = len(data) - 1
+             lab = random.randint(0,size)
+             i = 0
+             for room in data:
+                 if i == lab:
+                     return data[room]['data']
+                 else:
+                     i+=1
+
+
 class Server(Ice.Application):
     '''
     Authentication Server
@@ -80,7 +97,15 @@ class Server(Ice.Application):
         adapter.addDefaultServant(servant, '')
         adapter.activate()
         logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
-        print('"{}"'.format(proxy), flush=True)
+        print('Proxy del RoomService: "{}"'.format(proxy), flush=True)
+
+        servantGame = GameI()
+#        signal.signal(signal.SIGUSR1, servantGame.refresh)
+        gameadapter = self.communicator().createObjectAdapter('GameAdapter')
+        proxygame = gameadapter.add(servantGame, self.communicator().stringToIdentity('default'))
+        gameadapter.addDefaultServant(servantGame, '')
+        logging.debug('AdapterGame ready, servant proxy: {}'.format(proxygame))
+        print('Proxy del Game: "{}"'.format(proxygame), flush=True)
 
         logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
