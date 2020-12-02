@@ -27,6 +27,12 @@ class RoomServiceI(IceGauntlet.RoomService):
         with open(ROOMS_FILE,'w') as contents:
             json.dump(self._rooms_, contents, indent=4, sort_keys=True)
 
+    def roomNameexists(self,name):
+        for room in self._rooms_:
+             if name == room:
+                  return True
+        return False
+
     def roomdataexists(self,data):
         for room in self._rooms_:
             if data == self._rooms_[room]['data']:
@@ -56,7 +62,7 @@ class RoomServiceI(IceGauntlet.RoomService):
 
         else:
             raise IceGauntlet.Unauthorized()
-    
+
     def remove(self, token, roomName, current=None):
         ''''check if user exists'''
         valid = self.authentication.isValid(token)
@@ -64,8 +70,8 @@ class RoomServiceI(IceGauntlet.RoomService):
             '''Now, We gonna try to remove roomData from a DB file'''
             '''Build the dictionary data'''
             #contain = json.loads(roomData)
-            if self.roomdataexists(roomName):
-                if self._rooms_[token]['token'] == token:
+            if self.roomNameexists(roomName):
+                if self._rooms_[roomName]['token'] == token:
                     ROOMS_FILE.splice(roomName,1)
                     self.__commit__()
                 else:
@@ -114,8 +120,13 @@ class Server(Ice.Application):
         signal.signal(signal.SIGUSR1, servant.refresh)
 
         adapter = self.communicator().createObjectAdapter('RoomServiceAdapter')
-#        proxy = adapter.add(servant, self.communicator().stringToIdentity('default'))
-        proxy = adapter.addWithUUID(servant)
+        RoomServiceIdentity = self.communicator().stringToIdentity('roomservice')
+        adapter.add(servant,RoomServiceIdentity)
+        proxy = adapter.createProxy(RoomServiceIdentity)
+   #     adapter.remove(RoomServiceIdentity);
+#        proxy = adapter.addWithUUID(servant)
+#
+        #adapter.addServant(servant)
 #        adapter.addDefaultServant(servant)
         #adapter.activate()
 #        logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
@@ -123,10 +134,14 @@ class Server(Ice.Application):
 
         servantGame = GameI()
 #        signal.signal(signal.SIGUSR1, servantGame.refresh)
-        proxy = adapter.addWithUUID(servantGame)
+        GameIdentity = self.communicator().stringToIdentity('gameservice')
+        adapter.add(servantGame,GameIdentity)
+        proxygame = adapter.createProxy(GameIdentity)
+#adapter.addDefaultServant(servantGame)
         adapter.activate()
         logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
-        print('Proxy: "{}"'.format(proxy), flush=True)
+        print('ProxyRoom: "{}"'.format(proxy), flush=True)
+        print('Proxygame: "{}"'.format(proxygame), flush=True)
 
         logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
