@@ -13,20 +13,20 @@ class Client(Ice.Application):
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
         roomservice = IceGauntlet.RoomServicePrx.checkedCast(proxy)
-        if not authentication:
+        if not roomservice:
             raise RuntimeError('Invalid proxy')
 
         token = argv[2]
         roomName = argv[3]
-        p = log.progress("Trying to Push the Room...")
+        p = log.progress("Trying to Remove the Room...")
         time.sleep(1)
         try:
             roomservice.remove(token,roomName)
-            p.status("Room sending...")
+            p.status("Room removing...")
             time.sleep(1)
             p.success("Done")
         except IceGauntlet.Unauthorized:
-            p.failure("Token valid")
+            p.failure("Token not valid")
         except IceGauntlet.RoomNotExists:
             p.failure("The room not exists")
 

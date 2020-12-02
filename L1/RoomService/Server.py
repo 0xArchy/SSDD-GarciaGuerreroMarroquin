@@ -56,6 +56,25 @@ class RoomServiceI(IceGauntlet.RoomService):
 
         else:
             raise IceGauntlet.Unauthorized()
+    
+    def remove(self, token, roomName, current=None):
+        ''''check if user exists'''
+        valid = self.authentication.isValid(token)
+        if valid:
+            '''Now, We gonna try to remove roomData from a DB file'''
+            '''Build the dictionary data'''
+            #contain = json.loads(roomData)
+            if self.roomdataexists(roomName):
+                if self._rooms_[token]['token'] == token:
+                    ROOMS_FILE.splice(roomName,1)
+                    self.__commit__()
+                else:
+                    raise IceGauntlet.Unauthorized()
+            else:
+                raise IceGauntlet.RoomNotExists()
+
+        else:
+            raise IceGauntlet.Unauthorized()
 
 class GameI(IceGauntlet.Game):
 
@@ -107,7 +126,7 @@ class Server(Ice.Application):
         proxy = adapter.addWithUUID(servantGame)
         adapter.activate()
         logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
-        print('Proxy"{}"'.format(proxy), flush=True)
+        print('Proxy: "{}"'.format(proxy), flush=True)
 
         logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
