@@ -71,8 +71,9 @@ class RoomServiceI(IceGauntlet.RoomService):
             '''Build the dictionary data'''
             #contain = json.loads(roomData)
             if self.roomNameexists(roomName):
+                print (self._rooms_[roomName]['token'])
                 if self._rooms_[roomName]['token'] == token:
-                    ROOMS_FILE.splice(roomName,1)
+                    del self._rooms_[roomName]
                     self.__commit__()
                 else:
                     raise IceGauntlet.Unauthorized()

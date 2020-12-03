@@ -49,6 +49,3 @@ Por defecto el personaje seleccionado es el guerrero (*warrior*) pero puede eleg
 ```sh
 dungeon_local -p elf tutorial.json
 ```
-# Ejecución en paralelo
-
-En desarrollo por Pablo Guerrero SanJuán y Tomás Jesús García López
