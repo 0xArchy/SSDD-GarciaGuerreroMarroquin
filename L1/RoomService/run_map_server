@@ -53,11 +53,11 @@ class RoomServiceI(IceGauntlet.RoomService):
                 'token': token,
                 'data': contain['data']
             }
-            self._rooms_[nombre] = data
 
-            if self.roomdataexists(contain['data']):
+            if self.roomNameexists(nombre):
                 raise IceGauntlet.RoomAlreadyExists()
             else:
+                self._rooms_[nombre] = data
                 self.__commit__()
 
         else:
@@ -71,7 +71,6 @@ class RoomServiceI(IceGauntlet.RoomService):
             '''Build the dictionary data'''
             #contain = json.loads(roomData)
             if self.roomNameexists(roomName):
-                print (self._rooms_[roomName]['token'])
                 if self._rooms_[roomName]['token'] == token:
                     del self._rooms_[roomName]
                     self.__commit__()
@@ -124,21 +123,10 @@ class Server(Ice.Application):
         RoomServiceIdentity = self.communicator().stringToIdentity('roomservice')
         adapter.add(servant,RoomServiceIdentity)
         proxy = adapter.createProxy(RoomServiceIdentity)
-   #     adapter.remove(RoomServiceIdentity);
-#        proxy = adapter.addWithUUID(servant)
-#
-        #adapter.addServant(servant)
-#        adapter.addDefaultServant(servant)
-        #adapter.activate()
-#        logging.debug('Adapter ready, servant proxy: {}'.format(proxy))
-#        print('Proxy del RoomService: "{}"'.format(proxy), flush=True)
-
         servantGame = GameI()
-#        signal.signal(signal.SIGUSR1, servantGame.refresh)
         GameIdentity = self.communicator().stringToIdentity('gameservice')
         adapter.add(servantGame,GameIdentity)
         proxygame = adapter.createProxy(GameIdentity)
-#adapter.addDefaultServant(servantGame)
         adapter.activate()
         logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
         print('ProxyRoom: "{}"'.format(proxy), flush=True)

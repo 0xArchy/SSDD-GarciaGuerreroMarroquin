@@ -17,10 +17,13 @@ class Client(Ice.Application):
             raise RuntimeError('Invalid proxy')
 
         token = argv[2]
-        roomData = argv[3]
+        roomFile = argv[3]
         p = log.progress("Trying to Push the Room...")
         time.sleep(1)
         try:
+            f = open(roomFile,'r')
+            roomjson = json.loads(f.read())
+            roomData = json.dumps(roomjson)
             roomservice.publish(token,roomData)
             p.status("Room sending...")
             time.sleep(1)
