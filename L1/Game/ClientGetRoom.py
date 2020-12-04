@@ -10,24 +10,25 @@ import time,json,random
 
 class Client(Ice.Application):
 
+    def __save__(self,room):
+         with open('tmp.json','w+') as roomfile:
+             roomfile.write(room)
+
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
         game = IceGauntlet.GamePrx.checkedCast(proxy)
         if not game:
             raise RuntimeError('Invalid proxy')
 
-        #token = argv[2]
-        #roomData = argv[3]
-        p = log.progress("Trying to Push the Room...")
-        time.sleep(1)
         try:
             room = game.getRoom()
-            p.status("Getting room...")
-            time.sleep(1)
-            p.success("Done")
+            '''
+            Now We try to save the game in a tmp.json file 
+            '''
             print(room)
+            self.__save__(room)
         except IceGauntlet.RoomNotExists:
-            p.failure("Room not exists")
+            print("Room not exists")
 
 if __name__ == "__main__":
 

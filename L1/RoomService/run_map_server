@@ -85,20 +85,21 @@ class RoomServiceI(IceGauntlet.RoomService):
 class GameI(IceGauntlet.Game):
 
     def getRoom(self,current=None):
-        map = ""
+        map = {}
         with open(ROOMS_FILE,'r') as contents:
              data = json.load(contents)
              if len(data) == 0:
                  raise IceGauntlet.RoomNotExists()
              size = len(data)
-             lab = random.randint(0,size) - 1
+             lab = random.randint(0,size-1)
              i = 0
              for room in data:
                  if i == lab:
-                     map = str(data[room]['data'])
+                     map['data'] = str(data[room]['data'])
+                     map['room'] = str(room)
                  else:
                      i+=1
-        return map
+        return json.dumps(map)
 
 
 class Server(Ice.Application):
