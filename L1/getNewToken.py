@@ -18,7 +18,7 @@ class Client(Ice.Application):
 
         user = argv[1]
 #        print('Enter password:')
-        password = getpass.getpass('Enter password:')
+        password = getpass.getpass('p: ')
         '''
         if sys.stdin.isatty():
             password = getpass.getpass('password:')
@@ -29,7 +29,7 @@ class Client(Ice.Application):
         #create a password_hash
         password = hashlib.sha256(password.encode()).hexdigest()
         #get a token
-#        p = log.progress("Getting the token...")
+        p = log.progress("Getting the token...")
 #        time.sleep(1)
         try:
             found = False
@@ -63,7 +63,8 @@ class Client(Ice.Application):
             print(token)
  #           p.success("Done")
         except IceGauntlet.Unauthorized:
-            p.failure("User or password not valid")
+            print("user or paw invalid")
+  #          p.failure("User or password not valid")
 
     def write_json(self,data, filename='tokens.json'):
         with open(filename,'w') as f:
