@@ -12,8 +12,8 @@ class Client(Ice.Application):
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
-        roomservice = IceGauntlet.RoomServicePrx.checkedCast(proxy)
-        if not roomservice:
+        roomManager = IceGauntlet.RoomManagerPrx.checkedCast(proxy)
+        if not roomManager:
             raise RuntimeError('Invalid proxy')
 
         token = argv[2]
@@ -24,7 +24,7 @@ class Client(Ice.Application):
             f = open(roomFile,'r')
             roomjson = json.loads(f.read())
             roomData = json.dumps(roomjson)
-            roomservice.publish(token,roomData)
+            roomManager.publish(token,roomData)
             p.status("Room sending...")
             time.sleep(1)
             p.success("Done")
@@ -32,7 +32,7 @@ class Client(Ice.Application):
             p.failure("Token not valid")
         except IceGauntlet.RoomAlreadyExists:
             p.failure("The room already exists")
-        except IceGauntlet.InvalidRoom:
+        except IceGauntlet.WrongRoomFormat:
             p.failure("The roomData format is not valid")
 
 if __name__ == "__main__":
