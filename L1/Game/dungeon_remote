@@ -3,7 +3,7 @@
 # pylint: disable=W1203
 
 '''
-    ICE Gauntlet LOCAL GAME
+    ICE Gauntlet Remote Game
 '''
 
 import sys
@@ -29,6 +29,26 @@ DEFAULT_ROOM = 'tutorial.json'
 DEFAULT_HERO = game.common.HEROES[0]
 
 
+class RemoteDungeonMap(Ice.Application):
+
+    def __init__(self,prox):
+        self.prox = prox
+
+    def run(self,argv):
+        self.proxy = self.communicator().stringToProxy(self.prox)
+        self.gameservice = IceGauntlet.GamePrx.checkedCast(self.proxy)
+        if not self.gameservice:
+            raise RuntimeError('Invalid proxy')
+
+    def next_room(self):
+        try:
+            self.mapa = self.gameservice.getRoom()
+        except IceGauntlet.RoomNotExists():
+            print('Not more rooms')
+
+    def finnished(self):
+        return not self.map
+
 @atexit.register
 # pylint: disable=W0613
 def bye(*args, **kwargs):
@@ -40,7 +60,7 @@ def parse_commandline():
     '''Parse and check commandline'''
     parser = argparse.ArgumentParser('IceDungeon Local Game')
     #parser.add_argument('LEVEL', nargs='+', default=[DEFAULT_ROOM], help='List of levels')
-    parser.add_argument('PROXY',nargs='+', default=None, help=None)
+    parser.add_argument('-pr','--proxy', default=None,dest='proxy',help='Proxy GameServer')
     parser.add_argument(
         '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
         dest='hero', help='Hero to play with'
@@ -58,11 +78,11 @@ def main(argv):
     user_options = parse_commandline()
     if not user_options:
         return BAD_COMMAND_LINE
-    print(argv[1])
-    game.pyxeltools.initialize()
     #dungeon = game.DungeonMap(user_options.LEVEL)
-    dungeon = RemoteDungeonMap(argv[1])
-    gauntlet = game.Game(user_options.hero, dungeon.next_room())
+    dungeon = RemoteDungeonMap(user_options.proxy)
+    dungeon.main(sys.argv)
+    gauntlet = game.Game(user_options.hero, dungeon)
+    game.pyxeltools.initialize()
     gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
     gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)
     gauntlet.add_state(game.screens.GameScreen, game.common.GAME_SCREEN)
@@ -72,21 +92,6 @@ def main(argv):
 
     return EXIT_OK
 
-class RemoteDungeonMap(Ice.Application):
-    def __init__(self,proxy):
-        self.finished = False
-        self.proxy = proxy
-
-    def next_room(self):
-        prox = self.communicator().stringToProxy(self.proxy)
-        intermediary = IceGauntlet.GamePrx.checkedCast(prox)
-        if not intermediary:
-            raise RuntimeError('Invalid proxy')
-        try:
-            mapa = intermediary.getRoom()
-        except IceGauntlet.RoomNotExists():
-            print('Room not exists')
-        
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
