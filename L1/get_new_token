@@ -14,7 +14,7 @@ except ImportError:
     sys.exit(1)
 
 # Define command to request new token
-_COMMAND_ = '/usr/bin/python3 /home/blazzes/SSDD/SSDD_NOBACKUP/SSDD_Proyect/L1/getNewToken.py "%(user)s" "%(auth_proxy)s"'
+_COMMAND_ = '/usr/bin/python3 ./getnewtoken.py "%(user)s" "%(auth_proxy)s"'
 
 # Message used by authentication client when asking for a password
 _PASSWORD_MESSAGE_ = 'Enter password:'
@@ -37,7 +37,6 @@ final_command = _COMMAND_ % {
 
 # Run command
 proc = pexpect.spawn(final_command, echo=False)
-proc.logfile = sys.stdout.buffer
 # Wait for client to ask for password
 found = proc.expect(
     [_PASSWORD_MESSAGE_, pexpect.TIMEOUT, pexpect.EOF], timeout=_TIMEOUT_FOR_MESSAGE_
