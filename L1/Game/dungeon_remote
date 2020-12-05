@@ -33,6 +33,8 @@ class RemoteDungeonMap(Ice.Application):
 
     def __init__(self,hero):
         self.hero = hero
+        self.mapa = None
+        self.mapasjugados = [self.mapa]
 
     def run(self,argv):
         self.proxy = self.communicator().stringToProxy(argv[1])
@@ -51,14 +53,24 @@ class RemoteDungeonMap(Ice.Application):
     @property
     def next_room(self):
         try:
-            self.mapa = self.gameservice.getRoom()
-            return json.dumps(self.mapa)
+            timeout = 0
+            while self.mapa in self.mapasjugados and timeout < 30:
+                self.mapa = self.gameservice.getRoom()
+                if self.mapa not in self.mapasjugados:
+                    self.mapasjugados.append(self.mapa)
+                    break
+                timeout += 1
+
+            if timeout >= 30:
+                sys.exit()
+                bye()
+            return self.mapa
 
         except IceGauntlet.RoomNotExists:
             print('Not more rooms')
     @property
-    def finnished(self):
-        return not self.map
+    def finished(self):
+        return not self.mapa
 
 @atexit.register
 # pylint: disable=W0613
@@ -90,7 +102,7 @@ def main(argv):
     if not user_options:
         return BAD_COMMAND_LINE
     #dungeon = game.DungeonMap(user_options.LEVEL)
-    dungeon = RemoteDungeonMap(argv[1])
+    dungeon = RemoteDungeonMap(user_options.hero)
     dungeon.main(sys.argv)
     gauntlet = game.Game(user_options.hero, dungeon)
     game.pyxeltools.initialize()

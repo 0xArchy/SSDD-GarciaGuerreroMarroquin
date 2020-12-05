@@ -6,6 +6,7 @@ assets/LICENSE.txt
 assets/enemies.png
 assets/heroes.png
 assets/map_entities.png
+assets/my_map.json
 assets/palette.json
 assets/tile.png
 assets/tile_screen.png

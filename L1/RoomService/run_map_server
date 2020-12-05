@@ -84,21 +84,32 @@ class RoomServiceI(IceGauntlet.RoomService):
 
 class GameI(IceGauntlet.Game):
 
+    def __init__(self):
+        self._rooms_ = {}
+        if os.path.exists(ROOMS_FILE):
+            self.refresh()
+
+    def refresh(self):
+        #logging.debug('Reloading user database')
+        with open(ROOMS_FILE,'r') as contents:
+            self._rooms_ = json.load(contents)
+
     def getRoom(self,current=None):
         map = {}
-        with open(ROOMS_FILE,'r') as contents:
-             data = json.load(contents)
-             if len(data) == 0:
-                 raise IceGauntlet.RoomNotExists()
-             size = len(data)
-             lab = random.randint(0,size-1)
-             i = 0
-             for room in data:
-                 if i == lab:
-                     map['data'] = str(data[room]['data'])
-                     map['room'] = str(room)
-                 else:
-                     i+=1
+        if len(self._rooms_) == 0:
+             raise IceGauntlet.RoomNotExists()
+        lab = random.choice(list(self._rooms_.keys()))
+        map['data'] = self._rooms_[lab]['data']
+        map['room'] = lab
+        '''
+        i = 0
+        for room in data:
+            if i == lab:
+                map['data'] = data[room]['data']
+                map['room'] = room
+            else:
+                i+=1
+        '''
         return json.dumps(map)
 
 
