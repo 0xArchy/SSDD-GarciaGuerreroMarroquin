@@ -1,13 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
+
+'''
+Script for change user token
+'''
+
+import os
+import hashlib
+import sys
+import getpass
+import json
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
-import os, hashlib, sys
-import getpass
-import time,json
 
 class Client(Ice.Application):
+
+    '''
+    This class change user token and raising exceptions if
+    the user password and token is invalid
+    '''
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[2])
@@ -50,9 +64,15 @@ class Client(Ice.Application):
         except IceGauntlet.Unauthorized:
             print("User or password not valid")
 
+
     def write_json(self,data, filename='tokens.json'):
-        with open(filename,'w') as f:
-            json.dump(data, f, indent=4)
+
+        '''
+        write_json allows to write in tokens.json the new token
+        '''
+
+        with open(filename,'w') as file:
+            json.dump(data, file, indent=4)
 
 if __name__ == "__main__":
 

@@ -1,18 +1,30 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=w0614
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
+
+'''
+Script that allows to get a room from the interface Dungeon owned by
+Icegauntlet.ice
+'''
+
+import sys
+from pwn import *
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
-import os, hashlib, sys
-import getpass
-from pwn import *
-import time,json,random
 
 class Client(Ice.Application):
 
+    '''
+    class Client that allows to get a room from the server and save it
+    tmp.json
+    '''
+
     def __save__(self,room):
-         with open('tmp.json','w+') as roomfile:
-             roomfile.write(room)
+        with open('tmp.json','w+') as roomfile:
+            roomfile.write(room)
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
@@ -22,9 +34,6 @@ class Client(Ice.Application):
 
         try:
             room = game.getRoom()
-            '''
-            Now We try to save the game in a tmp.json file 
-            '''
             print(room)
             self.__save__(room)
         except IceGauntlet.RoomNotExists:
@@ -33,6 +42,6 @@ class Client(Ice.Application):
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
-        print("usage: ./ClientGetRoom <proxy>")
+        print("usage: ./client_get_room.py <proxy>")
         sys.exit(1)
     sys.exit(Client().main(sys.argv))

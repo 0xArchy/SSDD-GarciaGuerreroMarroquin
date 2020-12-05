@@ -1,14 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=w0614
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
+
+'''
+Script for change user password
+'''
+
+import hashlib
+import sys
+import time
+import getpass
+from pwn import *
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
-import os, hashlib, sys
-import getpass
-from pwn import *
-import time
+
 
 class Client(Ice.Application):
+
+    '''
+    Client class for change user password
+    '''
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
@@ -28,15 +42,15 @@ class Client(Ice.Application):
 
         new_password = hashlib.sha256(new_password.encode()).hexdigest()
         #get a token
-        p = log.progress('Changing password..')
+        variable_progress = log.progress('Changing password..')
         time.sleep(1)
         try:
             authentication.changePassword(user,current_password,new_password)
-            p.status("Commiting changes...")
+            variable_progress.status("Commiting changes...")
             time.sleep(1)
-            p.success("Password changed")
+            variable_progress.success("Password changed")
         except IceGauntlet.Unauthorized:
-            p.failure("Password not valid")
+            variable_progress.failure("Password not valid")
 
 
 
