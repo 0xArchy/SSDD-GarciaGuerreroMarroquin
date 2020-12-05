@@ -121,7 +121,7 @@ class GameI(IceGauntlet.Dungeon):
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
 
-    def get_room(self,current=None):
+    def getRoom(self,current=None):
         '''
         get a room from the DB
         '''

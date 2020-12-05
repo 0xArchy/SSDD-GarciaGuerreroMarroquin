@@ -69,8 +69,8 @@ class RemoteDungeonMap(Ice.Application):
                 timeout += 1
 
             if timeout >= 30:
-                sys.exit()
-                #bye()
+                sys.exit(0)
+                
             return self.mapa
 
         except IceGauntlet.RoomNotExists:
