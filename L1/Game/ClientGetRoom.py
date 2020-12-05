@@ -16,7 +16,7 @@ class Client(Ice.Application):
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
-        game = IceGauntlet.GamePrx.checkedCast(proxy)
+        game = IceGauntlet.DungeonPrx.checkedCast(proxy)
         if not game:
             raise RuntimeError('Invalid proxy')
 

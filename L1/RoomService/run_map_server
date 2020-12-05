@@ -7,7 +7,7 @@ import IceGauntlet
 
 ROOMS_FILE = 'rooms.json'
 
-class RoomServiceI(IceGauntlet.RoomService):
+class RoomServiceI(IceGauntlet.RoomManager):
     '''pasar proxy authentication por parámetro desde run'''
     def __init__(self,authentication):
         self._rooms_ = {}
@@ -82,7 +82,7 @@ class RoomServiceI(IceGauntlet.RoomService):
         else:
             raise IceGauntlet.Unauthorized()
 
-class GameI(IceGauntlet.Game):
+class GameI(IceGauntlet.Dungeon):
 
     def __init__(self):
         self._rooms_ = {}

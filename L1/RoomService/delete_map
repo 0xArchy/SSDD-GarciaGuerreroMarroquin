@@ -12,7 +12,7 @@ class Client(Ice.Application):
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
-        roomservice = IceGauntlet.RoomServicePrx.checkedCast(proxy)
+        roomservice = IceGauntlet.RoomManagerPrx.checkedCast(proxy)
         if not roomservice:
             raise RuntimeError('Invalid proxy')
 

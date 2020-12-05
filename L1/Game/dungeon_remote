@@ -38,7 +38,7 @@ class RemoteDungeonMap(Ice.Application):
 
     def run(self,argv):
         self.proxy = self.communicator().stringToProxy(argv[1])
-        self.gameservice = IceGauntlet.GamePrx.checkedCast(self.proxy)
+        self.gameservice = IceGauntlet.DungeonPrx.checkedCast(self.proxy)
         if not self.gameservice:
             raise RuntimeError('Invalid proxy')
         gauntlet = game.Game(self.hero, self)
@@ -61,9 +61,9 @@ class RemoteDungeonMap(Ice.Application):
                     break
                 timeout += 1
 
-            if timeout >= 30:
-                sys.exit()
-                bye()
+            #if timeout >= 30:
+                #sys.exit()
+                #bye()
             return self.mapa
 
         except IceGauntlet.RoomNotExists:
