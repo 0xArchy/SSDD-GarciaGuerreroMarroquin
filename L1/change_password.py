@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#pylint: disable-msg=w0614
 #pylint: disable-msg=e0401
 #pylint: disable-msg=c0413
 
@@ -12,7 +11,7 @@ import hashlib
 import sys
 import time
 import getpass
-from pwn import *
+from pwn import log
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet

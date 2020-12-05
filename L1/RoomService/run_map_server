@@ -1,14 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
 
-import Ice, sys, json, os.path, logging, signal, random
+'''
+Script that runs the server
+'''
+
+import sys
+import json
+import os.path
+import logging
+import signal
+import random
+import Ice
 Ice.loadSlice('Icegauntlet.ice')
 import IceGauntlet
 
 ROOMS_FILE = 'rooms.json'
 
 class RoomServiceI(IceGauntlet.RoomManager):
-    '''pasar proxy authentication por parámetro desde run'''
+
+    '''
+    pass proxy authentication for parameter from run
+    '''
     def __init__(self,authentication):
         self._rooms_ = {}
         self.authentication = authentication
@@ -18,6 +33,9 @@ class RoomServiceI(IceGauntlet.RoomManager):
             self.__commit__()
 
     def refresh(self):
+        '''
+        maps update
+        '''
         logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
@@ -27,34 +45,38 @@ class RoomServiceI(IceGauntlet.RoomManager):
         with open(ROOMS_FILE,'w') as contents:
             json.dump(self._rooms_, contents, indent=4, sort_keys=True)
 
-    def roomNameexists(self,name):
+    def room_name_exists(self,name):
+        '''
+        check if the room name already exits, its not allowed to have two rooms with same name
+        '''
         for room in self._rooms_:
-             if name == room:
-                  return True
+            if name == room:
+                return True
         return False
 
     def roomdataexists(self,data):
+        '''
+        check if the room data already exits, its not allowed to have two equal maps
+        '''
         for room in self._rooms_:
             if data == self._rooms_[room]['data']:
                 return True
         return False
 
-    def publish(self, token, roomData, current=None):
+    def publish(self, token, room_data, current=None):
         '''check if user exists'''
         valid = self.authentication.isValid(token)
         if valid:
-            '''Now, We gonna try to put roomData into a DB file'''
-            '''Build the dictionary data'''
-            contain = json.loads(roomData)
+            contain = json.loads(room_data)
             if not contain['room'] and not contain['data']:
-                raise IceGauntlet.InvalidRoom()
+                raise IceGauntlet.WrongRoomFormat()
             nombre = contain['room']
             data = {
                 'token': token,
                 'data': contain['data']
             }
 
-            if self.roomNameexists(nombre):
+            if self.room_name_exists(nombre):
                 raise IceGauntlet.RoomAlreadyExists()
             else:
                 self._rooms_[nombre] = data
@@ -63,16 +85,14 @@ class RoomServiceI(IceGauntlet.RoomManager):
         else:
             raise IceGauntlet.Unauthorized()
 
-    def remove(self, token, roomName, current=None):
+    def remove(self, token, room_name, current=None):
         ''''check if user exists'''
         valid = self.authentication.isValid(token)
         if valid:
-            '''Now, We gonna try to remove roomData from a DB file'''
-            '''Build the dictionary data'''
-            #contain = json.loads(roomData)
-            if self.roomNameexists(roomName):
-                if self._rooms_[roomName]['token'] == token:
-                    del self._rooms_[roomName]
+            #contain = json.loads(room_data)
+            if self.room_name_exists(room_name):
+                if self._rooms_[room_name]['token'] == token:
+                    del self._rooms_[room_name]
                     self.__commit__()
                 else:
                     raise IceGauntlet.Unauthorized()
@@ -84,32 +104,40 @@ class RoomServiceI(IceGauntlet.RoomManager):
 
 class GameI(IceGauntlet.Dungeon):
 
+    '''
+    service of the server for implement interface Dungeon from Icegauntlet.ice
+    '''
+
     def __init__(self):
         self._rooms_ = {}
         if os.path.exists(ROOMS_FILE):
             self.refresh()
 
     def refresh(self):
+        '''
+        refresh the rooms of the DB
+        '''
         #logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
 
-    def getRoom(self,current=None):
+    def get_room(self,current=None):
+        '''
+        get a room from the DB
+        '''
         map = {}
         if len(self._rooms_) == 0:
-             raise IceGauntlet.RoomNotExists()
+            raise IceGauntlet.RoomNotExists()
         lab = random.choice(list(self._rooms_.keys()))
         map['data'] = self._rooms_[lab]['data']
         map['room'] = lab
-        '''
-        i = 0
-        for room in data:
-            if i == lab:
-                map['data'] = data[room]['data']
-                map['room'] = room
-            else:
-                i+=1
-        '''
+        #i = 0
+        #for room in data:
+        #    if i == lab:
+        #        map['data'] = data[room]['data']
+        #        map['room'] = room
+        #    else:
+        #        i+=1
         return json.dumps(map)
 
 
@@ -122,7 +150,7 @@ class Server(Ice.Application):
         Server loop
         '''
         logging.debug('Initializing server...')
-        '''check authentication proxy'''
+        #check authentication proxy
         proxyauth = self.communicator().stringToProxy(argv[1])
         authentication = IceGauntlet.AuthenticationPrx.checkedCast(proxyauth)
         if not authentication:
@@ -132,13 +160,13 @@ class Server(Ice.Application):
         signal.signal(signal.SIGUSR1, servant.refresh)
 
         adapter = self.communicator().createObjectAdapter('RoomServiceAdapter')
-        RoomServiceIdentity = self.communicator().stringToIdentity('roomservice')
-        adapter.add(servant,RoomServiceIdentity)
-        proxy = adapter.createProxy(RoomServiceIdentity)
-        servantGame = GameI()
-        GameIdentity = self.communicator().stringToIdentity('gameservice')
-        adapter.add(servantGame,GameIdentity)
-        proxygame = adapter.createProxy(GameIdentity)
+        room_service_identity = self.communicator().stringToIdentity('roomservice')
+        adapter.add(servant,room_service_identity)
+        proxy = adapter.createProxy(room_service_identity)
+        servant_game = GameI()
+        game_identity = self.communicator().stringToIdentity('gameservice')
+        adapter.add(servant_game,game_identity)
+        proxygame = adapter.createProxy(game_identity)
         adapter.activate()
         logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
         print('ProxyRoom: "{}"'.format(proxy), flush=True)
@@ -154,8 +182,8 @@ class Server(Ice.Application):
 if __name__ == '__main__':
 
     if len(sys.argv) != 3:
-         print("usage: ./Server.py <proxy>")
-         sys.exit(0)
+        print("usage: ./Server.py <proxy>")
+        sys.exit(0)
 
     app = Server()
     sys.exit(app.main(sys.argv))

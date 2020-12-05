@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
+
+'''
+Script that allows an user to upload a map
+'''
+
+import sys
+import time
+import json
+from pwn import log
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
-import os, hashlib, sys
-import getpass
-from pwn import *
-import time,json
 
 class Client(Ice.Application):
+
+    '''
+    class that contains the code to upload a map to the server
+    '''
 
     def run(self,argv):
         proxy = self.communicator().stringToProxy(argv[1])
@@ -17,23 +28,23 @@ class Client(Ice.Application):
             raise RuntimeError('Invalid proxy')
 
         token = argv[2]
-        roomFile = argv[3]
-        p = log.progress("Trying to Push the Room...")
+        room_file = argv[3]
+        progress_variable = log.progress("Trying to Push the Room...")
         time.sleep(1)
         try:
-            f = open(roomFile,'r')
-            roomjson = json.loads(f.read())
-            roomData = json.dumps(roomjson)
-            roomservice.publish(token,roomData)
-            p.status("Room sending...")
+            file = open(room_file,'r')
+            roomjson = json.loads(file.read())
+            room_data = json.dumps(roomjson)
+            roomservice.publish(token,room_data)
+            progress_variable.status("Room sending...")
             time.sleep(1)
-            p.success("Done")
+            progress_variable.success("Done")
         except IceGauntlet.Unauthorized:
-            p.failure("Token not valid")
+            progress_variable.failure("Token not valid")
         except IceGauntlet.RoomAlreadyExists:
-            p.failure("The room already exists")
+            progress_variable.failure("The room already exists")
         except IceGauntlet.WrongRoomFormat:
-            p.failure("The roomData format is not valid")
+            progress_variable.failure("The roomData format is not valid")
 
 if __name__ == "__main__":
 

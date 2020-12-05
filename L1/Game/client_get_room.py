@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-#pylint: disable-msg=w0614
 #pylint: disable-msg=e0401
 #pylint: disable-msg=c0413
 
@@ -10,7 +9,6 @@ Icegauntlet.ice
 '''
 
 import sys
-from pwn import *
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
@@ -33,7 +31,7 @@ class Client(Ice.Application):
             raise RuntimeError('Invalid proxy')
 
         try:
-            room = game.getRoom()
+            room = game.get_room()
             print(room)
             self.__save__(room)
         except IceGauntlet.RoomNotExists:
