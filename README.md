@@ -1,5 +1,5 @@
-Proyect url: https://github.com/BlaZzes10/SSDD_GarciaGuerrero/tree/L1
+https://github.com/BlaZzes10/SSDD-GarciaGuerrero/tree/L1
 
-Alumno 1: tomasjesus.garcia@alu.uclm.es
+Tomás Jesús García López tomasjesus.garcia@alu.uclm.es
 
-Alumno 2: pablo.guerrero@alu.uclm.es
+Pablo Guerrero Sanjuan pablo.guerrero@alu.uclm.es

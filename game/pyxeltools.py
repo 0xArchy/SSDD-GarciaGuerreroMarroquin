@@ -81,6 +81,9 @@ def run(game_app):
     '''Start pyxel game loop'''
     pyxel.run(game_app.update, game_app.render)
 
+def exit():
+    pyxel.quit()
+
 
 def tile(tile_id):
     '''Return box of 16x16 pixels: (xo, yo, width, height)'''

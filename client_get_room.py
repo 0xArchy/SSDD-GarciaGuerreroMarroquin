@@ -32,7 +32,6 @@ class Client(Ice.Application):
 
         try:
             room = game.getRoom()
-            print(room)
             self.__save__(room)
         except IceGauntlet.RoomNotExists:
             print("Room not exists")
