@@ -1,34 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
+
+'''
+Script for change user token
+'''
+
+import os
+import hashlib
+import sys
+import getpass
+import json
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
-import os, hashlib, sys
-import getpass
-from pwn import *
-import time,json
 
 class Client(Ice.Application):
 
+    '''
+    This class change user token and raising exceptions if
+    the user password and token is invalid
+    '''
+
     def run(self,argv):
-        proxy = self.communicator().stringToProxy(argv[1])
+        proxy = self.communicator().stringToProxy(argv[2])
         authentication = IceGauntlet.AuthenticationPrx.checkedCast(proxy)
         if not authentication:
             raise RuntimeError('Invalid proxy')
 
-        user = argv[2]
-        password = getpass.getpass(prompt='password: ')
-
-        #create a password_hash
+        user = argv[1]
+        password = getpass.getpass('Enter password:')
         password = hashlib.sha256(password.encode()).hexdigest()
-        #get a token
-        p = log.progress("Getting the token...")
-        time.sleep(1)
         try:
             found = False
             token = authentication.getNewToken(user, password)
-            p.status("Putting the token into a tokens file...")
-            time.sleep(1)
 		    # escribimos el token en nuestro archivo de usuarios y tokens
             # Si no existe creamos el fichero
             if not os.path.exists('tokens.json'):
@@ -53,17 +59,26 @@ class Client(Ice.Application):
                     }
                     users.append(newdata)
                     self.write_json(data)
-            p.success("Done")
+            print(token)
+
         except IceGauntlet.Unauthorized:
-            p.failure("User or password not valid")
+            print("User or password not valid")
+
 
     def write_json(self,data, filename='tokens.json'):
-        with open(filename,'w') as f:
-            json.dump(data, f, indent=4)
+
+        '''
+        write_json allows to write in tokens.json the new token
+        '''
+
+        with open(filename,'w') as file:
+            json.dump(data, file, indent=4)
 
 if __name__ == "__main__":
 
+
     if len(sys.argv) != 3:
-        print("usage: ./GetToken <proxy> <user>")
+        print("usage: ./GetNewToken <user> <proxy>")
         sys.exit(1)
+
     sys.exit(Client().main(sys.argv))

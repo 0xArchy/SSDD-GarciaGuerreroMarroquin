@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#pylint: disable-msg=e0401
+#pylint: disable-msg=c0413
+
+'''
+Script that allows the user to delete any map uploaded by him/her/it
+'''
+
+import sys
+import time
+from pwn import log
+import Ice
+Ice.loadSlice("Icegauntlet.ice")
+import IceGauntlet
+
+class Client(Ice.Application):
+
+    '''
+    class that contains the code to delete a map
+    '''
+
+    def run(self,argv):
+        proxy = self.communicator().stringToProxy(argv[1])
+        roomservice = IceGauntlet.RoomManagerPrx.checkedCast(proxy)
+        if not roomservice:
+            raise RuntimeError('Invalid proxy')
+
+        token = argv[2]
+        room_name = argv[3]
+        progress_variable = log.progress("Trying to Remove the Room...")
+        time.sleep(1)
+        try:
+            roomservice.remove(token,room_name)
+            progress_variable.status("Room removing...")
+            time.sleep(1)
+            progress_variable.success("Done")
+        except IceGauntlet.Unauthorized:
+            progress_variable.failure("Token not valid")
+        except IceGauntlet.RoomNotExists:
+            progress_variable.failure("The room not exists")
+
+if __name__ == "__main__":
+
+    if len(sys.argv) != 4:
+        print("usage: ./ClientRemove <proxy> <token> <roomname>")
+        sys.exit(1)
+    sys.exit(Client().main(sys.argv))

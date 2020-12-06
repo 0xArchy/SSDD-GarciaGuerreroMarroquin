@@ -7,6 +7,7 @@
 '''
 
 import json
+import logging
 import os.path
 
 import pyxel
@@ -80,6 +81,9 @@ def run(game_app):
     '''Start pyxel game loop'''
     pyxel.run(game_app.update, game_app.render)
 
+def exit():
+    pyxel.quit()
+
 
 def tile(tile_id):
     '''Return box of 16x16 pixels: (xo, yo, width, height)'''
@@ -117,11 +121,19 @@ def load_json_map(jsonfile):
         Also support parse the content of the file passed as string
         Return a list of objects in the map.
     '''
-    if os.path.exists(jsonfile):
-        with open(jsonfile, 'r') as contents:
-            src_map = json.load(contents)
-    else:
+    try:
         src_map = json.loads(jsonfile)
+    except json.JSONDecodeError:
+        logging.debug('Cannot parse JSON data, trying as filename')
+        jsonfile = game.assets.search(jsonfile)
+        if not jsonfile:
+            raise ValueError('JSON file not found!')
+        with open(jsonfile, 'r') as contents:
+            try:
+                src_map = json.load(contents)
+            except Exception as error:
+                raise ValueError('Wrong JSON data: {}'.format(error))
+
     map_data = src_map.get('data', None)
     map_name = src_map.get('room', os.path.basename(jsonfile))
     if not map_data:
