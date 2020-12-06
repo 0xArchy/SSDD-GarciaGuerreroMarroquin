@@ -31,8 +31,7 @@ class Client(Ice.Application):
             raise RuntimeError('Invalid proxy')
 
         try:
-            room = game.get_room()
-            print(room)
+            room = game.getRoom()
             self.__save__(room)
         except IceGauntlet.RoomNotExists:
             print("Room not exists")

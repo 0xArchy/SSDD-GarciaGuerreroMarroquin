@@ -123,6 +123,9 @@ class Game:
         '''Game loop iteration'''
         self._current_state_.update()
 
+    def exit(self):
+        game.pyxeltools.exit()
+
     def render(self):
         '''Draw a single frame'''
         self._current_state_.render()

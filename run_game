@@ -25,7 +25,6 @@ import game.orchestration
 EXIT_OK = 0
 BAD_COMMAND_LINE = 1
 
-DEFAULT_ROOM = 'tutorial.json'
 DEFAULT_HERO = game.common.HEROES[0]
 
 
@@ -41,44 +40,60 @@ class RemoteDungeonMap(Ice.Application):
         self.mapasjugados = [self.mapa]
         self.gameservice = None
         self.proxy = None
+        self.finish = False
+        self.gauntlet = None
 
     def run(self,argv):
         self.proxy = self.communicator().stringToProxy(argv[1])
         self.gameservice = IceGauntlet.DungeonPrx.checkedCast(self.proxy)
         if not self.gameservice:
             raise RuntimeError('Invalid proxy')
-        gauntlet = game.Game(self.hero, self)
-        game.pyxeltools.initialize()
-        gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
-        gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)
-        gauntlet.add_state(game.screens.GameScreen, game.common.GAME_SCREEN)
-        gauntlet.add_state(game.screens.GameOverScreen, game.common.GAME_OVER_SCREEN)
-        gauntlet.add_state(game.screens.GoodEndScreen, game.common.GOOD_END_SCREEN)
-        gauntlet.start()
+
+        try:
+            self.gauntlet = game.Game(self.hero, self)
+            game.pyxeltools.initialize()
+            self.gauntlet.add_state(game.screens.TileScreen, game.common.INITIAL_SCREEN)
+            self.gauntlet.add_state(game.screens.StatsScreen, game.common.STATUS_SCREEN)
+            self.gauntlet.add_state(game.screens.GameScreen, game.common.GAME_SCREEN)
+            self.gauntlet.add_state(game.screens.GameOverScreen, game.common.GAME_OVER_SCREEN)
+            self.gauntlet.add_state(game.screens.GoodEndScreen, game.common.GOOD_END_SCREEN)
+            self.gauntlet.start()
+
+        except SystemExit:
+            print()
 
     @property
     def next_room(self):
         '''get next room from DB for play it'''
         try:
             timeout = 0
-            while self.mapa in self.mapasjugados and timeout < 30:
+            while self.mapa in self.mapasjugados and timeout < 50:
                 self.mapa = self.gameservice.getRoom()
                 if self.mapa not in self.mapasjugados:
                     self.mapasjugados.append(self.mapa)
                     break
                 timeout += 1
 
-            if timeout >= 30:
-                sys.exit()
+            if timeout >= 50:
+                self.gauntlet.exit()
+                #self.finish = True
+                #self.gauntlet.update()
+                #p = Process(os.getpid())
+                #p.terminate()
+                #self.finished()
+                #self.finish = True
                 #bye()
+                #self.finished(game.screens.GoodEndScreen)
+
             return self.mapa
 
         except IceGauntlet.RoomNotExists:
             print('Not more rooms')
+
     @property
     def finished(self):
         '''check if all maps were already played'''
-        return not self.mapa
+        return self.finish
 
 @atexit.register
 # pylint: disable=W0613
@@ -90,7 +105,6 @@ def bye(*args, **kwargs):
 def parse_commandline():
     '''Parse and check commandline'''
     parser = argparse.ArgumentParser('IceDungeon Local Game')
-    #parser.add_argument('LEVEL', nargs='+', default=[DEFAULT_ROOM], help='List of levels')
     parser.add_argument('PROXY',nargs='+', default=None,help='Proxy GameServer')
     parser.add_argument(
         '-p', '--player', default=DEFAULT_HERO, choices=game.common.HEROES,
@@ -98,10 +112,6 @@ def parse_commandline():
     )
     options = parser.parse_args()
 
-    #for level_file in options.LEVEL:
-    #    if not game.assets.search(level_file):
-    #        logging.error(f'Level "{level_file}" not found!')
-    #        return None
     return options
 
 def main(argv):
@@ -109,11 +119,8 @@ def main(argv):
     user_options = parse_commandline()
     if not user_options:
         return BAD_COMMAND_LINE
-    #dungeon = game.DungeonMap(user_options.LEVEL)
     dungeon = RemoteDungeonMap(user_options.hero)
-    dungeon.main(sys.argv)
-    #gauntlet = game.Game(user_options.hero, dungeon)
-    #game.pyxeltools.initialize()
+    dungeon.main(argv)
 
     return EXIT_OK
 
