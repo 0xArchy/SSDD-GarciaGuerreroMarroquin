@@ -16,6 +16,7 @@ import random
 import Ice
 Ice.loadSlice('Icegauntlet.ice')
 import IceGauntlet
+import icegauntlettool
 
 ROOMS_FILE = 'rooms.json'
 
@@ -109,18 +110,24 @@ class GameI(IceGauntlet.Dungeon):
     '''
 
     def __init__(self):
-        self._rooms_ = {}
-        if os.path.exists(ROOMS_FILE):
-            self.refresh()
+        # Creamos el objeto dungeonArea
+        self.dungeonarea = DungeonArea()
+        #self._rooms_ = []
+        # CREAMOS LA FACTORIA DE OBJETOS DUNGEONAREA
+        #for i in range(5):
+        #    rooms.add(DungeonArea())
+        #if os.path.exists(ROOMS_FILE):
+        #    self.refresh()
 
-    def refresh(self):
+    """def refresh(self):
         '''
         refresh the rooms of the DB
         '''
         #logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
-
+    """
+    """
     def getRoom(self,current=None):
         '''
         get a room from the DB
@@ -139,6 +146,48 @@ class GameI(IceGauntlet.Dungeon):
         #    else:
         #        i+=1
         return json.dumps(map)
+    """
+    def getEntrance(self, current=None):
+        return self.dungeonarea
+
+class DungeonArea(IceGauntlet.DungeonArea):
+    def __init__(self):
+        self.DungeonArea = DungeonArea()
+        self._rooms_ = {}
+        if os.path.exists(ROOMS_FILE):
+            self.refresh()
+
+    def refresh(self):
+        '''
+        refresh the rooms of the DB
+        '''
+        #logging.debug('Reloading user database')
+        with open(ROOMS_FILE,'r') as contents:
+            self._rooms_ = json.load(contents)
+
+    def getEventChannel(self, current=None):
+
+    def getMap(self,current=None):
+        map = {}
+        if len(self._rooms_) == 0:
+            raise IceGauntlet.RoomNotExists()
+        lab = random.choice(list(self._rooms_.keys()))
+        map['data'] = self._rooms_[lab]['data']
+        map['room'] = lab
+        return json.dumps(map)
+
+    def getActors(self, current=None):
+
+    def getItems(self, current=None):
+
+    def getNextArea(self):
+        return self.DungeonArea
+
+class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
+    def __init__():
+
+    def fireEvent(self,event,senderId,current=None):
+
 
 
 class Server(Ice.Application):

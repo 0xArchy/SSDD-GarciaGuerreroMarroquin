@@ -56,7 +56,7 @@ module IceGauntlet {
     objects getItems();
     DungeonArea* getNextArea();
   };
-  
+
   interface Dungeon {
     DungeonArea* getEntrance() throws RoomNotExists;
   };
