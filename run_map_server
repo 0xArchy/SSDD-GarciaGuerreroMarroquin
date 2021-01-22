@@ -66,8 +66,8 @@ class RoomServiceI(IceGauntlet.RoomManager):
 
     def publish(self, token, room_data, current=None):
         '''check if user exists'''
-        valid = self.authentication.isValid(token)
-        if valid:
+        owner = self.authentication.getOwner(token)
+        if owner not None:
             contain = json.loads(room_data)
             if not contain['room'] and not contain['data']:
                 raise IceGauntlet.WrongRoomFormat()
@@ -88,11 +88,11 @@ class RoomServiceI(IceGauntlet.RoomManager):
 
     def remove(self, token, room_name, current=None):
         ''''check if user exists'''
-        valid = self.authentication.isValid(token)
-        if valid:
+        owner = self.authentication.getOwner(token)
+        if owner:
             #contain = json.loads(room_data)
             if self.room_name_exists(room_name):
-                if self._rooms_[room_name]['token'] == token:
+                if self.authentication.getOwner(self._rooms_[room_name]['token']) == owner:
                     del self._rooms_[room_name]
                     self.__commit__()
                 else:
