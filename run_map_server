@@ -84,6 +84,7 @@ class RoomManager(IceGauntlet.RoomManager):
     pass proxy authentication for parameter from run
     '''
     def __init__(self,authentication,adapter, topic_mgr):
+        global almacen
         self._rooms_ = {}
         self.adapter = adapter
         self.topic_mgr = topic_mgr
@@ -93,6 +94,9 @@ class RoomManager(IceGauntlet.RoomManager):
             self.refresh()
         else:
             self.__commit__()
+
+        # Al empezar el alamcen contiene los mismos mapas que el rooms.json
+        almacen.setRooms(self._rooms_)
 
     def crearRoomSync(self):
         self.roomsync = RoomManagerSync(self,self.adapter, self.topic_mgr)
@@ -191,6 +195,9 @@ class Almacen():
         with open(self.rooms_file,'w') as contents:
             json.dump(self._rooms_, contents, indent=4, sort_keys=True)
 
+    def setRooms(self, rooms):
+        self._rooms_=rooms
+
     def room_name_exists(self,name):
         '''
         check if the room name already exits, its not allowed to have two rooms with same name
@@ -268,7 +275,7 @@ class Dungeon(IceGauntlet.Dungeon):
         return json.dumps(map)
     """
     def getEntrance(self, current=None):
-        return self.proxy
+        return IceGauntlet.DungeonAreaPrx.checkedCast(self.proxy)
 
 class DungeonArea(IceGauntlet.DungeonArea):
     def __init__(self):
@@ -284,7 +291,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
         self.map = {}
         if len(self.almacen.getRooms()) == 0:
             raise IceGauntlet.RoomNotExists()
-        lab = random.choice(list(self._rooms_.keys()))
+        lab = random.choice(list(self.almacen.getRooms().keys()))
         self.map['data'] = self.almacen.getRooms()[lab]['data']
         self.map['room'] = lab
         return json.dumps(self.map)
@@ -295,8 +302,8 @@ class DungeonArea(IceGauntlet.DungeonArea):
 
     def getItems(self, current=None):
         self.objects = []
-        self.objectssinid = icegauntlettool.get_map_objects(self.map)
-        for i in range(len(objectssinid)):
+        self.objectssinid = icegauntlettool.get_map_objects(json.dumps(self.map))
+        for i in range(1,len(self.objectssinid)):
             self.objects.append((self.objectssinid[i],i))
 
         print(self.objects)
