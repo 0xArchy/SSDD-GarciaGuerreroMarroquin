@@ -233,10 +233,11 @@ class Dungeon(IceGauntlet.Dungeon):
     service of the server for implement interface Dungeon from Icegauntlet.ice
     '''
 
-    def __init__(self):
+    def __init__(self, adapter):
         # Creamos el objeto dungeonArea
+        self.adapter = adapter
         self.dungeonarea = DungeonArea()
-        #self.proxy = self.adapter.addWithUUID(self.dungeonarea)
+        self.proxy = self.adapter.addWithUUID(self.dungeonarea)
 
     """def refresh(self):
         '''
@@ -267,7 +268,7 @@ class Dungeon(IceGauntlet.Dungeon):
         return json.dumps(map)
     """
     def getEntrance(self, current=None):
-        return self.dungeonarea
+        return self.proxy
 
 class DungeonArea(IceGauntlet.DungeonArea):
     def __init__(self):
@@ -298,6 +299,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
         for i in range(len(objectssinid)):
             self.objects.append((self.objectssinid[i],i))
 
+        print(self.objects)
         return self.objects
 
     def getNextArea(self):
@@ -360,7 +362,7 @@ class Server(Ice.Application):
         room_service_identity = self.communicator().stringToIdentity('RoomManager')
         adapter.add(servant,room_service_identity)
         proxy = adapter.createProxy(room_service_identity)
-        servant_game = Dungeon()
+        servant_game = Dungeon(adapter)
         game_identity = self.communicator().stringToIdentity('DungeonArea')
         servant_Game_Sync = DungeonAreaSync(servant_game.getEntrance())
         #game_sync_identity = self.communicator().stringToIdentity('DungeonAreaSync')
