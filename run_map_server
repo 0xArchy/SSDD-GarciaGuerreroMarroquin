@@ -21,11 +21,13 @@ import pickle
 import uuid
 import IceStorm
 
+global almacen = None
 ROOMS_FILE = 'rooms.json'
 
 class RoomManagerSync(IceGauntlet.RoomManagerSync):
 
     def __init__(self, roomManager,adapter, topic_mgr):
+        global almacen
         self.topicroom = None
         self._managers_ = []
         self.adapter = adapter
@@ -34,6 +36,7 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
         self.crearcanal()
         self.id = str(uuid.uuid4())
         self.almacen = Almacen(self.id)
+        almacen = self.almacen
         self.room_manager_proxy = self.adapter.addWithUUID(roomManager)
         self.publisher = self.topicroom.getPublisher()
         self.printer = IceGauntlet.RoomManagerSyncPrx.uncheckedCast(self.publisher)
@@ -233,6 +236,7 @@ class Dungeon(IceGauntlet.Dungeon):
     def __init__(self):
         # Creamos el objeto dungeonArea
         self.dungeonarea = DungeonArea()
+        self.proxy = self.adapter.addWithUUID(self.dungeonarea)
 
     """def refresh(self):
         '''
@@ -263,23 +267,18 @@ class Dungeon(IceGauntlet.Dungeon):
         return json.dumps(map)
     """
     def getEntrance(self, current=None):
-        return self.dungeonarea
+        return self.proxy
 
 class DungeonArea(IceGauntlet.DungeonArea):
     def __init__(self):
-        self._rooms_ = {}
+        global almacen
+        self.almacen = almacen
+        self.dungeonarea = DungeonArea()
+        self.proxy = self.adapter.addWithUUID(self.dungeonarea)
         self.subscriber = DungeonAreaSync(self)
         self.eventchannelname = self.getEventChannel()
         if os.path.exists(ROOMS_FILE):
             self.refresh()
-
-    def refresh(self):
-        '''
-        refresh the rooms of the DB
-        '''
-        #logging.debug('Reloading user database')
-        with open(ROOMS_FILE,'r') as contents:
-            self._rooms_ = json.load(contents)
 
     def getEventChannel(self, current=None):
         return "GameTopic"
@@ -300,7 +299,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
         return
 
     def getNextArea(self):
-        return self.DungeonArea
+        return self.proxy
 
     def manejador_eventos(self,event):
         type_event = event[0]
@@ -311,7 +310,7 @@ class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
 
     def __init__(self, DungeonArea):
         #Instanciamos el servicio de eventos
-        self._parent_ = DungeonArea
+        self._parent_ = IceGauntlet.DungeonAreaPrx.uncheckedCast(DungeonArea)
         
 
     def fireEvent(self,event,senderId,current=None):
