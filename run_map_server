@@ -17,18 +17,160 @@ import Ice
 Ice.loadSlice('Icegauntlet.ice')
 import IceGauntlet
 import icegauntlettool
+import pickle
+import uuid
+import IceStorm
 
 ROOMS_FILE = 'rooms.json'
 
-class RoomServiceI(IceGauntlet.RoomManager):
+class RoomManagerSync(IceGauntlet.RoomManagerSync):
+
+    def __init__(self, roomManager,adapter, topic_mgr):
+        self.topicroom = None
+        self._managers_ = []
+        self.adapter = adapter
+        self.topic_mgr = topic_mgr
+        self.roomManager = roomManager
+        self.crearcanal()
+        self.id = str(uuid.uuid4())
+        self.almacen = Almacen(self.id)
+        self.room_manager_proxy = self.adapter.addWithUUID(roomManager)
+        self.publisher = self.topicroom.getPublisher()
+        self.printer = IceGauntlet.RoomManagerSyncPrx.uncheckedCast(self.publisher)
+        self.printer.hello(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy), self.id)
+
+    def crearcanal(self):
+        subscriberRoom = self.adapter.addWithUUID(self)
+
+        topic_name_room = "RoomManagerSyncChannel"
+        qosroom = {}
+        try:
+            self.topicroom = self.topic_mgr.retrieve(topic_name_room)
+        except IceStorm.NoSuchTopic:
+            self.topicroom = self.topic_mgr.create(topic_name_room)
+
+        self.topicroom.subscribeAndGetPublisher(qosroom, subscriberRoom)
+
+    def getPrinter(self):
+        return self.printer
+
+    def hello(self, manager, managerId,current = None):
+        print("Hola, soy {}".format(self.id))
+        self._managers_.append(managerId)
+        self.printer.announce(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy),self.id)
+
+    def announce(self, manager, managerId,current = None):
+        if self.id != managerId:
+            print("Anounce, yo soy {}".format(managerId))
+            self._managers_.append(managerId)
+
+    def newRoom(self,roomName, managerId, current = None):
+        if not self.almacen.room_name_exists(roomName):
+            roomdata = self.roomManager.getRoom(roomName)
+            self.almacen.addRoom(roomName, roomdata)
+
+    def removedRoom(self,roomName, current = None):
+        if self.almacen.room_name_exists(roomName):
+            self.almacen.removeRoom(roomName)
+        
+
+
+class RoomManager(IceGauntlet.RoomManager):
 
     '''
     pass proxy authentication for parameter from run
     '''
-    def __init__(self,authentication):
+    def __init__(self,authentication,adapter, topic_mgr):
         self._rooms_ = {}
+        self.adapter = adapter
+        self.topic_mgr = topic_mgr
         self.authentication = authentication
+        self.crearRoomSync()
         if os.path.exists(ROOMS_FILE):
+            self.refresh()
+        else:
+            self.__commit__()
+
+    def crearRoomSync(self):
+        self.roomsync = RoomManagerSync(self,self.adapter, self.topic_mgr)
+
+    def getRoom(self, roomName, current = None):
+        self.refresh()
+        if roomName not in self._rooms_:
+            raise IceGauntlet.RoomNotExists() 
+        return str(self._rooms_[roomName])
+
+    def room_name_exists(self,name):
+        '''
+        check if the room name already exits, its not allowed to have two rooms with same name
+        '''
+        for room in self._rooms_:
+            if name == room:
+                return True
+        return False
+
+    def refresh(self):
+    
+        # maps update
+        
+        logging.debug('Reloading user database')
+        with open(ROOMS_FILE,'r') as contents:
+            self._rooms_ = json.load(contents)
+
+    def __commit__(self):
+        logging.debug('Room database updated!')
+        with open(ROOMS_FILE,'w') as contents:
+            json.dump(self._rooms_, contents, indent=4, sort_keys=True)
+
+    def publish(self, token, room_data, current=None):
+        '''check if user exists'''
+        owner = self.authentication.getOwner(token)
+        if owner != None:
+            contain = json.loads(room_data)
+            if not contain['room'] and not contain['data']:
+                raise IceGauntlet.WrongRoomFormat()
+            nombre = contain['room']
+            data = {
+                'token': token,
+                'data': contain['data']
+            }
+
+            if self.room_name_exists(nombre):
+                raise IceGauntlet.RoomAlreadyExists()
+            else:
+                self._rooms_[nombre] = data
+                self.__commit__()
+                self.roomsync.getPrinter().newRoom(nombre, self.roomsync.id)
+
+        else:
+            raise IceGauntlet.Unauthorized()
+
+    def remove(self, token, room_name, current=None):
+        ''''check if user exists'''
+        owner = self.authentication.getOwner(token)
+        if owner:
+            #contain = json.loads(room_data)
+            if self.room_name_exists(room_name):
+                if self.authentication.getOwner(self._rooms_[room_name]['token']) == owner:
+                    del self._rooms_[room_name]
+                    self.__commit__()
+                    self.roomsync.getPrinter().removedRoom(room_name)
+                else:
+                    raise IceGauntlet.Unauthorized()
+            else:
+                raise IceGauntlet.RoomNotExists()
+
+        else:
+            raise IceGauntlet.Unauthorized()
+
+
+class Almacen():
+
+    def __init__(self, idalmacen):
+        # construimos el nombre del almacen
+        self.rooms_file = 'Almacen{}'.format(idalmacen[:5])
+        self._rooms_ = {}
+        if os.path.exists(self.rooms_file):
             self.refresh()
         else:
             self.__commit__()
@@ -38,12 +180,12 @@ class RoomServiceI(IceGauntlet.RoomManager):
         maps update
         '''
         logging.debug('Reloading user database')
-        with open(ROOMS_FILE,'r') as contents:
+        with open(self.rooms_file,'r') as contents:
             self._rooms_ = json.load(contents)
 
     def __commit__(self):
         logging.debug('Room database updated!')
-        with open(ROOMS_FILE,'w') as contents:
+        with open(self.rooms_file,'w') as contents:
             json.dump(self._rooms_, contents, indent=4, sort_keys=True)
 
     def room_name_exists(self,name):
@@ -64,46 +206,25 @@ class RoomServiceI(IceGauntlet.RoomManager):
                 return True
         return False
 
-    def publish(self, token, room_data, current=None):
-        '''check if user exists'''
-        owner = self.authentication.getOwner(token)
-        if owner not None:
-            contain = json.loads(room_data)
-            if not contain['room'] and not contain['data']:
-                raise IceGauntlet.WrongRoomFormat()
-            nombre = contain['room']
-            data = {
-                'token': token,
-                'data': contain['data']
-            }
+    def getRooms(self):
+        return self._rooms_
 
-            if self.room_name_exists(nombre):
-                raise IceGauntlet.RoomAlreadyExists()
-            else:
-                self._rooms_[nombre] = data
-                self.__commit__()
+    def removeRoom(self,roomName):
+        del self._rooms_[roomName]
+        self.__commit__()
 
-        else:
-            raise IceGauntlet.Unauthorized()
+    def addRoom(self, nombre, data):
+        self._rooms_[nombre] = data
+        self.__commit__()
 
-    def remove(self, token, room_name, current=None):
-        ''''check if user exists'''
-        owner = self.authentication.getOwner(token)
-        if owner:
-            #contain = json.loads(room_data)
-            if self.room_name_exists(room_name):
-                if self.authentication.getOwner(self._rooms_[room_name]['token']) == owner:
-                    del self._rooms_[room_name]
-                    self.__commit__()
-                else:
-                    raise IceGauntlet.Unauthorized()
-            else:
-                raise IceGauntlet.RoomNotExists()
+    def ImprimirMapas(self):
+        for i in self._rooms_:
+            print(i)
 
-        else:
-            raise IceGauntlet.Unauthorized()
 
-class GameI(IceGauntlet.Dungeon):
+    
+
+class Dungeon(IceGauntlet.Dungeon):
 
     '''
     service of the server for implement interface Dungeon from Icegauntlet.ice
@@ -112,12 +233,6 @@ class GameI(IceGauntlet.Dungeon):
     def __init__(self):
         # Creamos el objeto dungeonArea
         self.dungeonarea = DungeonArea()
-        #self._rooms_ = []
-        # CREAMOS LA FACTORIA DE OBJETOS DUNGEONAREA
-        #for i in range(5):
-        #    rooms.add(DungeonArea())
-        #if os.path.exists(ROOMS_FILE):
-        #    self.refresh()
 
     """def refresh(self):
         '''
@@ -152,8 +267,9 @@ class GameI(IceGauntlet.Dungeon):
 
 class DungeonArea(IceGauntlet.DungeonArea):
     def __init__(self):
-        self.DungeonArea = DungeonArea()
         self._rooms_ = {}
+        self.subscriber = DungeonAreaSync(self)
+        self.eventchannelname = self.getEventChannel()
         if os.path.exists(ROOMS_FILE):
             self.refresh()
 
@@ -166,6 +282,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
             self._rooms_ = json.load(contents)
 
     def getEventChannel(self, current=None):
+        return "GameTopic"
 
     def getMap(self,current=None):
         map = {}
@@ -177,44 +294,85 @@ class DungeonArea(IceGauntlet.DungeonArea):
         return json.dumps(map)
 
     def getActors(self, current=None):
+        return
 
     def getItems(self, current=None):
+        return
 
     def getNextArea(self):
         return self.DungeonArea
 
+    def manejador_eventos(self,event):
+        type_event = event[0]
+        args_event = event[1]
+        #Dependiendo del evento llamaremos a una función o otra
+
 class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
-    def __init__():
+
+    def __init__(self, DungeonArea):
+        #Instanciamos el servicio de eventos
+        self._parent_ = DungeonArea
+        
 
     def fireEvent(self,event,senderId,current=None):
-
+        try:
+            event = pickle.loads(event)
+        except Exception:
+            return
+        self._parent_.manejador_eventos(event)
 
 
 class Server(Ice.Application):
-    '''
-    Authentication Server
-    '''
+
+    def get_topic_manager(self):
+        key = 'IceStormAdmin.TopicManager.Default'
+        proxy = self.communicator().propertyToProxy(key)
+        if proxy is None:
+            print("property {} not set".format(key))
+            return None
+
+        print("Using IceStorm in: '%s'" % key)
+        return IceStorm.TopicManagerPrx.checkedCast(proxy)
+    
+
     def run(self, argv):
-        '''
-        Server loop
-        '''
+        
         logging.debug('Initializing server...')
+
+        # Game Topic
+        topic_mgr = self.get_topic_manager()
+        if not topic_mgr:
+            print('Invalid proxy')
+            return 2
+        
         #check authentication proxy
         proxyauth = self.communicator().stringToProxy(argv[1])
         authentication = IceGauntlet.AuthenticationPrx.checkedCast(proxyauth)
         if not authentication:
             raise RuntimeError('Invalid proxy')
 
-        servant = RoomServiceI(authentication)
-        signal.signal(signal.SIGUSR1, servant.refresh)
-
         adapter = self.communicator().createObjectAdapter('ServiceAdapter')
+        servant = RoomManager(authentication,adapter,topic_mgr)
+        # signal.signal(signal.SIGUSR1, servant.refresh)
         room_service_identity = self.communicator().stringToIdentity('RoomManager')
         adapter.add(servant,room_service_identity)
         proxy = adapter.createProxy(room_service_identity)
-        servant_game = GameI()
-        game_identity = self.communicator().stringToIdentity('Dungeon')
+        servant_game = Dungeon()
+        game_identity = self.communicator().stringToIdentity('DungeonArea')
+        servant_Game_Sync = DungeonAreaSync(servant_game.getEntrance())
+        #game_sync_identity = self.communicator().stringToIdentity('DungeonAreaSync')
         adapter.add(servant_game,game_identity)
+        subscriber = adapter.addWithUUID(servant_Game_Sync)
+
+        topic_name = "GameTopic"
+        qos = {}
+        try:
+            topic = topic_mgr.retrieve(topic_name)
+        except IceStorm.NoSuchTopic:
+            topic = topic_mgr.create(topic_name)
+
+        topic.subscribeAndGetPublisher(qos, subscriber)
+
         proxygame = adapter.createProxy(game_identity)
         adapter.activate()
         logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
@@ -224,6 +382,8 @@ class Server(Ice.Application):
         logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
+
+        topic.unsubscribe(subscriber)
 
         return 0
 
