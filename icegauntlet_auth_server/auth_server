@@ -112,7 +112,7 @@ class AuthenticationI(IceGauntlet.Authentication):
                 if j == token:
                     owner = i
                     break
-        if owner not None:
+        if owner is not None:
             return owner
         else:
             raise IceGauntlet.Unauthorized()

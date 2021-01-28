@@ -10,14 +10,14 @@ module IceGauntlet {
   struct Actor {
     string actorId;
     string attributes;
-  }
+  };
 
   struct Item {
     string itemId;
     int itemType;
     int positionX;
     int positionY;
-  }
+  };
 
   sequence<Actor> cast;
   sequence<Item> objects;
