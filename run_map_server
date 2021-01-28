@@ -21,7 +21,7 @@ import pickle
 import uuid
 import IceStorm
 
-global almacen = None
+global almacen 
 ROOMS_FILE = 'rooms.json'
 
 class RoomManagerSync(IceGauntlet.RoomManagerSync):
@@ -236,7 +236,7 @@ class Dungeon(IceGauntlet.Dungeon):
     def __init__(self):
         # Creamos el objeto dungeonArea
         self.dungeonarea = DungeonArea()
-        self.proxy = self.adapter.addWithUUID(self.dungeonarea)
+        #self.proxy = self.adapter.addWithUUID(self.dungeonarea)
 
     """def refresh(self):
         '''
@@ -267,39 +267,43 @@ class Dungeon(IceGauntlet.Dungeon):
         return json.dumps(map)
     """
     def getEntrance(self, current=None):
-        return self.proxy
+        return self.dungeonarea
 
 class DungeonArea(IceGauntlet.DungeonArea):
     def __init__(self):
         global almacen
         self.almacen = almacen
-        self.dungeonarea = DungeonArea()
-        self.proxy = self.adapter.addWithUUID(self.dungeonarea)
         self.subscriber = DungeonAreaSync(self)
         self.eventchannelname = self.getEventChannel()
-        if os.path.exists(ROOMS_FILE):
-            self.refresh()
 
     def getEventChannel(self, current=None):
         return "GameTopic"
 
     def getMap(self,current=None):
-        map = {}
-        if len(self._rooms_) == 0:
+        self.map = {}
+        if len(self.almacen.getRooms()) == 0:
             raise IceGauntlet.RoomNotExists()
         lab = random.choice(list(self._rooms_.keys()))
-        map['data'] = self._rooms_[lab]['data']
-        map['room'] = lab
-        return json.dumps(map)
+        self.map['data'] = self.almacen.getRooms()[lab]['data']
+        self.map['room'] = lab
+        return json.dumps(self.map)
+        
 
     def getActors(self, current=None):
         return
 
     def getItems(self, current=None):
-        return
+        self.objects = []
+        self.objectssinid = icegauntlettool.get_map_objects(self.map)
+        for i in range(len(objectssinid)):
+            self.objects.append((self.objectssinid[i],i))
+
+        return self.objects
 
     def getNextArea(self):
-        return self.proxy
+        self.dungeonarea = DungeonArea()
+        #self.proxy = self.adapter.addWithUUID(self.dungeonarea)
+        return self.dungeonarea # quizás deberiamos pasar el proxy
 
     def manejador_eventos(self,event):
         type_event = event[0]
@@ -310,8 +314,8 @@ class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
 
     def __init__(self, DungeonArea):
         #Instanciamos el servicio de eventos
-        self._parent_ = IceGauntlet.DungeonAreaPrx.uncheckedCast(DungeonArea)
-        
+        #self._parent_ = IceGauntlet.DungeonAreaPrx.checkedCast(DungeonArea)
+        self._parent_ = DungeonArea
 
     def fireEvent(self,event,senderId,current=None):
         try:
