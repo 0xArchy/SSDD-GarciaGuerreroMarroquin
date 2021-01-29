@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- This file was written by IceGrid GUI -->
+<icegrid>
+   <application name="IceGauntletApp">
+      <description>Aplicación IceGauntlet</description>
+      <distrib icepatch="${application}.IcePatch2/server"/>
+      <service-template id="IceStorm">
+         <parameter name="instance-name" default="${application}.IceStorm"/>
+         <parameter name="topic-manager-endpoints" default="default"/>
+         <parameter name="publish-endpoints" default="default"/>
+         <parameter name="flush-timeout" default="1000"/>
+         <service name="${instance-name}" entry="IceStormService,37:createIceStorm">
+            <properties>
+               <property name="${service}.LMDB.Path" value="${service.data}"/>
+               <property name="${service}.InstanceName" value="${instance-name}"/>
+               <property name="${service}.Flush.Timeout" value="${flush-timeout}"/>
+            </properties>
+            <adapter name="${service}.Publish" endpoints="${publish-endpoints}" id="${instance-name}.Publish"/>
+            <adapter name="${service}.TopicManager" endpoints="${topic-manager-endpoints}" id="${instance-name}.TopicManager">
+               <object identity="${instance-name}/TopicManager" type="::IceStorm::TopicManager"/>
+            </adapter>
+         </service>
+      </service-template>
+      <service-template id="IceStorm-HA">
+         <parameter name="instance-name" default="${application}.IceStorm"/>
+         <parameter name="node-id"/>
+         <parameter name="topic-manager-endpoints" default="default"/>
+         <parameter name="publish-endpoints" default="default"/>
+         <parameter name="node-endpoints" default="default"/>
+         <parameter name="flush-timeout" default="1000"/>
+         <parameter name="publish-replica-group"/>
+         <parameter name="topic-manager-replica-group"/>
+         <service name="${instance-name}${node-id}" entry="IceStormService,37:createIceStorm">
+            <properties>
+               <property name="${service}.LMDB.Path" value="${service.data}"/>
+               <property name="${service}.InstanceName" value="${instance-name}"/>
+               <property name="${service}.NodeId" value="${node-id}"/>
+               <property name="${service}.Flush.Timeout" value="${flush-timeout}"/>
+            </properties>
+            <adapter name="${service}.Node" endpoints="${node-endpoints}" id="${instance-name}${node-id}.Node"/>
+            <adapter name="${service}.Publish" endpoints="${publish-endpoints}" id="${instance-name}${node-id}.Publish" replica-group="${publish-replica-group}"/>
+            <adapter name="${service}.TopicManager" endpoints="${topic-manager-endpoints}" id="${instance-name}${node-id}.TopicManager" replica-group="${topic-manager-replica-group}"/>
+         </service>
+      </service-template>
+      <server-template id="Glacier2">
+         <parameter name="instance-name" default="${application}.Glacier2"/>
+         <parameter name="client-endpoints"/>
+         <parameter name="server-endpoints" default=""/>
+         <parameter name="session-timeout" default="0"/>
+         <server id="${instance-name}" activation="always" exe="glacier2router">
+            <properties>
+               <property name="Glacier2.Client.Endpoints" value="${client-endpoints}"/>
+               <property name="Glacier2.Server.Endpoints" value="${server-endpoints}"/>
+               <property name="Glacier2.InstanceName" value="${instance-name}"/>
+               <property name="Glacier2.SessionTimeout" value="${session-timeout}"/>
+            </properties>
+         </server>
+      </server-template>
+      <server-template id="IceGauntletAuthTemplate">
+         <parameter name="index"/>
+         <server id="IceGauntletAuthTemplate${index}" activation="on-demand" exe="icegauntlet_auth_server/auth_server" pwd="${application.distrib}">
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/server-out.txt"/>
+               <property name="Ice.ProgramName" value="${server}.Auth${index}"/>
+               <property name="Ice.Config" value="${application.distrib}/icegauntlet_auth_server/auth_server.conf"/>
+            </properties>
+            <adapter name="IceGauntletAuthTemplateAdapter" endpoints="default" id="${server}.IceGauntletAuthTemplateAdapter">
+               <object identity="default${index}" type="::IceGauntlet::Authentication" property="identity"/>
+            </adapter>
+         </server>
+      </server-template>
+      <server-template id="IcePatch2">
+         <parameter name="instance-name" default="${application}.IcePatch2"/>
+         <parameter name="endpoints" default="default"/>
+         <parameter name="directory"/>
+         <server id="${instance-name}" activation="on-demand" application-distrib="false" exe="icepatch2server">
+            <properties>
+               <property name="IcePatch2.InstanceName" value="${instance-name}"/>
+               <property name="IcePatch2.Directory" value="${directory}"/>
+            </properties>
+            <adapter name="IcePatch2" endpoints="${endpoints}" id="${server}.IcePatch2">
+               <object identity="${instance-name}/server" type="::IcePatch2::FileServer"/>
+            </adapter>
+         </server>
+      </server-template>
+      <server-template id="IceStorm">
+         <parameter name="instance-name" default="${application}.IceStorm"/>
+         <parameter name="topic-manager-endpoints" default="default"/>
+         <parameter name="publish-endpoints" default="default"/>
+         <parameter name="flush-timeout" default="1000"/>
+         <icebox id="${instance-name}" activation="on-demand" exe="icebox">
+            <service-instance template="IceStorm" instance-name="${instance-name}" topic-manager-endpoints="${topic-manager-endpoints}" publish-endpoints="${publish-endpoints}" flush-timeout="${flush-timeout}"/>
+         </icebox>
+      </server-template>
+      <server-template id="IceStorm-HA">
+         <parameter name="instance-name" default="${application}.IceStorm"/>
+         <parameter name="node-id"/>
+         <parameter name="topic-manager-endpoints" default="default"/>
+         <parameter name="publish-endpoints" default="default"/>
+         <parameter name="node-endpoints" default="default"/>
+         <parameter name="flush-timeout" default="1000"/>
+         <parameter name="publish-replica-group"/>
+         <parameter name="topic-manager-replica-group"/>
+         <icebox id="${instance-name}${node-id}" activation="on-demand" exe="icebox">
+            <service-instance template="IceStorm-HA" instance-name="${instance-name}" node-id="${node-id}" topic-manager-endpoints="${topic-manager-endpoints}" publish-endpoints="${publish-endpoints}" node-endpoints="${node-endpoints}" flush-timeout="${flush-timeout}" publish-replica-group="${publish-replica-group}" topic-manager-replica-group="${topic-manager-replica-group}"/>
+         </icebox>
+      </server-template>
+      <server-template id="RoomManagerTemplate">
+         <parameter name="index"/>
+         <server id="RoomManagerTemplate${index}" activation="on-demand" exe="./run_map_server" pwd="${application.distrib}">
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/room-out.txt"/>
+               <property name="Ice.ProgramName" value="${server}.RoomManager${index}"/>
+            </properties>
+         </server>
+      </server-template>
+      <replica-group id="ReplicatedRoomManager">
+         <load-balancing type="random" n-replicas="0"/>
+         <object identity="room_manager" type="IceGauntlet::RoomManager"/>
+      </replica-group>
+      <node name="node1">
+         <description>Nodo 1</description>
+         <server id="IceAuthServer" activation="manual" exe="icegauntlet_auth_server/auth_server" pwd="${application.distrib}">
+            <description>Servidor de autenticación</description>
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/server-out.txt"/>
+               <property name="Ice.Config" value="${application.distrib}/IceGauntletApp/icegauntlet_auth_server/auth_server.conf"/>
+            </properties>
+            <adapter name="IceAuthServerAdapter" endpoints="tcp" id="${server}.IceAuthServerAdapter"/>
+         </server>
+         <icebox id="IceBoxServer" activation="manual" exe="/usr/bin/icebox" pwd="${application.distrib}">
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/icebox-out.txt"/>
+               <property name="Ice.Config" value="${application.distrib}/IceGauntletApp/icebox.config"/>
+            </properties>
+            <service name="IceGauntlet.IceStorm" entry="${application.distrib}/icebox.config">
+            </service>
+         </icebox>
+         <server-instance template="IcePatch2" directory="/tmp/db/IceGauntletApp"/>
+         <server id="RoomManager1" activation="manual" exe="./run_map_server" pwd="${application.distrib}">
+            <description>Servidor de Mapas</description>
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/roommanager1-out.txt"/>
+               <property name="Ice.Config" value="${application.distrib}/IceGauntletApp/server.conf"/>
+            </properties>
+            <adapter name="DungeonAreaAdapter" endpoints="tcp" id="${server}.DungeonAreaAdapter"/>
+            <adapter name="DungeonAreaSyncAdapter" endpoints="tcp" id="${server}.DungeonAreaSyncAdapter"/>
+            <adapter name="RoomManager1Adapter" endpoints="tcp" id="${server}.RoomManager1Adapter" replica-group="ReplicatedRoomManager"/>
+            <adapter name="RoomManagerSyncAdapter" endpoints="tcp" id="${server}.RoomManagerSyncAdapter"/>
+         </server>
+      </node>
+      <node name="node2">
+         <description>Nodo 2
+</description>
+         <server id="DungeonServer" activation="manual" exe="./run_map_server" pwd="${application.distrib}">
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/dungeon-out.txt"/>
+               <property name="Ice.Config" value="${application.distrib}/IceGauntletApp/server.conf"/>
+            </properties>
+            <adapter name="DungeonServerAdapter" endpoints="tcp" id="${server}.DungeonServerAdapter"/>
+         </server>
+         <server id="RoomManager2" activation="manual" exe="./run_map_server" pwd="${application.distrib}">
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/roommanager2-out.txt"/>
+               <property name="Ice.Config" value="${application.distrib}/IceGauntletApp/server.conf"/>
+            </properties>
+            <adapter name="RoomManager2Adapter" endpoints="tcp" id="${server}.RoomManager2Adapter"/>
+         </server>
+         <server id="RoomManager3" activation="manual" exe="./run_map_server" pwd="${application.distrib}">
+            <properties>
+               <property name="Ice.StdOut" value="${application.distrib}/roommanager3-out.txt"/>
+               <property name="Ice.Config" value="${application.distrib}/IceGauntletApp/server.conf"/>
+            </properties>
+            <adapter name="RoomManager3Adapter" endpoints="tcp" id="${server}.RoomManager3Adapter"/>
+         </server>
+      </node>
+   </application>
+</icegrid>

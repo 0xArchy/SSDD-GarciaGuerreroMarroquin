@@ -1,0 +1,11 @@
+#!/bin/bash
+
+mkdir -p /tmp/db
+mkdir -p /tmp/db/registry
+mkdir -p /tmp/IceGauntletApp
+mkdir -p /tmp/db/node1
+mkdir -p /tmp/db/node2
+
+/usr/bin/icepatch2calc /tmp/IceGauntletApp
+
+cp -r * /tmp/IceGauntletApp
