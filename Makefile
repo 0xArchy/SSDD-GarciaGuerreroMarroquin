@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
 # -*- mode:makefile -*-
 
-all:
+all: 
 
 clean:
 	$(RM) -r /tmp/db
-	$(RM) -r /tmp/Printer
+	$(RM) -r /tmp/IceGauntletApp
 
 run: app-workspace
 	$(MAKE) run-node1 &
@@ -18,12 +18,12 @@ run-node1: /tmp/db/registry /tmp/db/node1/servers
 run-node2: /tmp/db/node2/servers
 	icegridnode --Ice.Config=node2.config
 
-run-client:
-	./Client.py --Ice.Config=locator.config "printer1 -t -e 1.1 @ PrinterServer$(SERVER).PrinterAdapter"
+#run-client:
+#	./Client.py --Ice.Config=locator.config "printer1 -t -e 1.1 @ PrinterServer$(SERVER).PrinterAdapter"
 
-app-workspace: /tmp/Printer
-	cp Printer.ice Server.py /tmp/Printer
-	icepatch2calc /tmp/Printer
+app-workspace: /tmp/IceGauntletApp
+	cp -r * /tmp/IceGauntletApp
+	icepatch2calc /tmp/IceGauntletApp
 
 /tmp/%:
 	mkdir -p $@

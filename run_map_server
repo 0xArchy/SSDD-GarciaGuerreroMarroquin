@@ -414,7 +414,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
             self.addActor(args_event[0],json.dumps(args_event[1]))
         elif type_event == "kill_object":
             if(self.isObject(args_event[0])):
-                self.removeObject(args_event[0])
+                self.removeObject(azrgs_event[0])
             else:
                 self.removeActor(args_event[0])
         elif type_event == "open_door":
@@ -438,9 +438,10 @@ class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
 
 class Server(Ice.Application):
 
-    def get_topic_manager(self):
+    def get_topic_manager(self,properties):
         key = 'IceStormAdmin.TopicManager.Default'
-        proxy = self.communicator().propertyToProxy(key)
+        #proxy = self.communicator().propertyToProxy(properties.getProperty(key))
+        proxy = self.communicator().stringToProxy(properties.getProperty(key))
         if proxy is None:
             print("property {} not set".format(key))
             return None
@@ -453,14 +454,16 @@ class Server(Ice.Application):
         
         logging.debug('Initializing server...')
 
+        atributes = self.communicator().getProperties()
         # Game Topic
-        topic_mgr = self.get_topic_manager()
+        topic_mgr = self.get_topic_manager(atributes)
         if not topic_mgr:
             print('Invalid proxy')
             return 2
         
         #check authentication proxy
-        proxyauth = self.communicator().stringToProxy(argv[1])
+        #proxyauth = self.communicator().stringToProxy(argv[1])
+        proxyauth = self.communicator().stringToProxy(atributes.getProperty('AuthProxy'))
         authentication = IceGauntlet.AuthenticationPrx.checkedCast(proxyauth)
         if not authentication:
             raise RuntimeError('Invalid proxy')
@@ -504,9 +507,9 @@ class Server(Ice.Application):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) != 3:
+    '''if len(sys.argv) != 3:
         print("usage: ./Server.py <proxy>")
         sys.exit(0)
-
+    '''
     app = Server()
     sys.exit(app.main(sys.argv))
