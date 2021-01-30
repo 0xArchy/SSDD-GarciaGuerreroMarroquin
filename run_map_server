@@ -25,7 +25,7 @@ global almacen
 ROOMS_FILE = '/tmp/db/rooms.json'
 
 class RoomManagerSync(IceGauntlet.RoomManagerSync):
-
+    '''RoomManagerSync Suscriber Class '''
     def __init__(self, roomManager,adapter, topic_mgr):
         global almacen
         self.topicroom = None
@@ -43,6 +43,7 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
         self.printer.hello(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy), self.id)
 
     def crearcanal(self):
+        '''create new channel method'''
         subscriberRoom = self.adapter.addWithUUID(self)
 
         topic_name_room = "RoomManagerSyncChannel"
@@ -55,24 +56,29 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
         self.topicroom.subscribeAndGetPublisher(qosroom, subscriberRoom)
 
     def getPrinter(self):
+        '''Return printer method'''
         return self.printer
 
     def hello(self, manager, managerId,current = None):
+        '''hello method'''
         print("Hola, soy {}".format(self.id))
         self._managers_.append(managerId)
         self.printer.announce(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy),self.id)
 
     def announce(self, manager, managerId,current = None):
+        '''announce method'''
         if self.id != managerId:
             print("Anounce, yo soy {}".format(managerId))
             self._managers_.append(managerId)
 
     def newRoom(self,roomName, managerId, current = None):
+        '''create new room method'''
         if not self.almacen.room_name_exists(roomName):
             roomdata = self.roomManager.getRoom(roomName)
             self.almacen.addRoom(roomName, roomdata)
 
     def removedRoom(self,roomName, current = None):
+        '''delete room method'''
         if self.almacen.room_name_exists(roomName):
             self.almacen.removeRoom(roomName)
 
@@ -93,9 +99,11 @@ class RoomManager(IceGauntlet.RoomManager):
             self.__commit__()
 
     def crearRoomSync(self):
+        '''crate room method'''
         self.roomsync = RoomManagerSync(self,self.adapter, self.topic_mgr)
 
     def getRoom(self, roomName, current = None):
+        '''Return room method'''
         self.refresh()
         if roomName not in self._rooms_:
             raise IceGauntlet.RoomNotExists()
@@ -111,7 +119,7 @@ class RoomManager(IceGauntlet.RoomManager):
         return False
 
     def refresh(self):
-        # maps update
+        '''maps update method'''
         logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
@@ -163,7 +171,7 @@ class RoomManager(IceGauntlet.RoomManager):
             raise IceGauntlet.Unauthorized()
 
 class Almacen():
-
+    '''Almacen class'''
     def __init__(self, idalmacen):
         # construimos el nombre del almacen
         self.rooms_file = 'Almacen{}'.format(idalmacen[:5])
@@ -175,7 +183,7 @@ class Almacen():
             self.__commit__()
 
     def inicioAlmacen(self):
-        # maps update
+        '''update Almacen method'''
         logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
@@ -195,6 +203,7 @@ class Almacen():
             json.dump(self._rooms_, contents, indent=4, sort_keys=True)
 
     def setRooms(self, rooms):
+        '''set room method'''
         self._rooms_=rooms
 
     def room_name_exists(self,name):
@@ -216,17 +225,21 @@ class Almacen():
         return False
 
     def getRooms(self):
+        '''Return room method'''
         return self._rooms_
 
     def removeRoom(self,roomName):
+        '''delete room method'''
         del self._rooms_[roomName]
         self.__commit__()
 
     def addRoom(self, nombre, data):
+        '''add map to list map method'''
         self._rooms_[nombre] = data
         self.__commit__()
 
     def ImprimirMapas(self):
+        '''Print Map list method'''
         for i in self._rooms_:
             print(i)
 
@@ -271,13 +284,15 @@ class Dungeon(IceGauntlet.Dungeon):
         return json.dumps(map)
     """
     def getDungeonArea(self):
+        '''Return dungeon method'''
         return self.dungeonarea
 
     def getEntrance(self, current=None):
+        '''Return dungeon entrance method'''
         return IceGauntlet.DungeonAreaPrx.checkedCast(self.proxy)
 
 class Item(IceGauntlet.Item):
-
+    '''Item Class'''
     def __init__(self, itemId='', itemType=0, positionX=0, positionY=0):
         self.itemId = itemId
         self.itemType = itemType
@@ -285,26 +300,32 @@ class Item(IceGauntlet.Item):
         self.positionY = positionY
 
     def getitemId(self):
+        '''Return item id method'''
         return self.itemId
 
     def itemType(self):
+        '''Return item type method'''
         return self.itemType
 
     def getpositionX(self):
+        '''Return X cardinal position method'''
         return self.positionX
 
     def getpositionY(self):
+        '''Return Y cardinal position method'''
         return self.positionY
 
     def __str__(self):
         return "{}:{}({},{})".format(self.itemId,self.itemType,self.positionX,self.positionY)
 
 class Actor(IceGauntlet.Actor):
+    '''Actort Class'''
     def __init__(self, actorId='',attributes=''):
         self.actorId = actorId
         self.attributes = attributes
 
     def getActorId(self):
+        '''return actor id method'''
         return self.actorId
 
     def __str__(self):
@@ -312,6 +333,7 @@ class Actor(IceGauntlet.Actor):
 
 
 class DungeonArea(IceGauntlet.DungeonArea):
+    '''Dungeon Area Class'''
     def __init__(self,adapter):
         global almacen
         self.almacen = almacen
@@ -321,9 +343,11 @@ class DungeonArea(IceGauntlet.DungeonArea):
         self.eventchannelname = self.getEventChannel()
 
     def getEventChannel(self, current=None):
+        '''return channel name method'''
         return "GameTopic"
 
     def getMap(self,current=None):
+        '''return .json map method'''
         self.map = {}
         if len(self.almacen.getRooms()) == 0:
             raise IceGauntlet.RoomNotExists()
@@ -334,21 +358,25 @@ class DungeonArea(IceGauntlet.DungeonArea):
         return json.dumps(self.map)
 
     def addActor(self,actorId,attributes):
+        '''adds an Actor to the action'''
         atributos = json.loads(attributes)
         actor = Actor(actorId,json.dumps(atributos))
         self.actors.append(actor)
 
     def removeObject(self, ObjectId):
+        '''removes an object from the action'''
         for i in self.objects:
             if i.getitemId() == ObjectId:
                 self.objects.remove(i)
 
     def removeActor(self, actorId):
+        '''delete an Actor form action'''
         for i in self.actors:
             if i.getActorId() == actorId:
                 self.actors.remove(i)
 
     def obtenerItems(self):
+        '''Return itslef as a object'''
         self.objects = []
         self.objectssinid = icegauntlettool.get_map_objects(json.dumps(self.map))
         j = 0
@@ -360,14 +388,17 @@ class DungeonArea(IceGauntlet.DungeonArea):
         return self.objects
 
     def isObject(self, id):
+        '''comprueba si el id pertenede a los objetos'''
         for i in self.objects:
             if str(i.getitemId()) == id:
                 return True
         return False
 
     def eliminarpuerta(self, idactor, idobject):
-        # sacamos la posición de la puerta
-        # creamos un vector de ids de objetos
+        '''
+        sacamos la posición de la puerta
+        creamos un vector de ids de objetos
+        '''
         objectsid = {}
         posicion = ()
         for i in self.objects:
@@ -384,17 +415,21 @@ class DungeonArea(IceGauntlet.DungeonArea):
                     self.objects.remove(i)
 
     def getActors(self, current=None):
+        '''Return current actor'''
         return self.actors
 
     def getItems(self, current=None):
+        '''Return current item/objetc'''
         return self.objects
 
     def getNextArea(self, current = None):
+        '''Return next area method'''
         self.dungeonarea = DungeonArea(self.adapter)
         self.proxy = self.adapter.addWithUUID(self.dungeonarea)
         return IceGauntlet.DungeonAreaPrx.checkedCast(self.proxy)
 
     def manejador_eventos(self,event):
+        '''manejador de eventos condicional'''
         type_event = event[0]
         args_event = event[1:]
         #Dependiendo del evento llamaremos a una función o otra
@@ -410,7 +445,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
 
 
 class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
-
+    '''Dungeon Area Synconizer class'''
     def __init__(self, DungeonArea):
         #Instanciamos el servicio de eventos
         #self._parent_ = IceGauntlet.DungeonAreaPrx.checkedCast(DungeonArea)
@@ -430,6 +465,7 @@ class Server(Ice.Application):
     '''Server Class'''
 
     def get_topic_manager(self,properties):
+        '''Server method topic manager return '''
         key = 'IceStorm.TopicManager.Proxy'
         #proxy = self.communicator().propertyToProxy(properties.getProperty(key))
         #proxy = self.communicator().stringToProxy(properties.getProperty(key))
