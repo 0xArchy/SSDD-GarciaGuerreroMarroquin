@@ -81,7 +81,7 @@
          <server id="AuthServer" activation="on-demand" exe="./auth_server" pwd="${application.distrib}">
             <properties>
                <property name="identity" value="default"/>
-               <property name="Ice.StdOut" value="${application.distrib}auth-server-out.txt"/>
+               <property name="Ice.StdOut" value="${application.distrib}/auth-server-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.Auth"/>
                <property name="Ice.StdErr" value="${application.distrib}/auth_server-err.txt"/>
             </properties>

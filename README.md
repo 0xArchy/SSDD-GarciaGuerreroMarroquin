@@ -28,3 +28,7 @@ The last command reload user database stored in *users.json*. Reloading the data
 ## Known problems
 
 This authentication server *is not secure* because an attacker could capture authentication tokens and also password hashes to _spoof_ users. In order to make this server more secure, switch endpoint protocol to *ssl* and configure it properly.
+
+## Nota Despliegue
+Los servidores se despliegan automaticamente gracias al campo activation = always. Entonces dará un warning en los nodos 1 y 2.
+Se vuelven a activar con el campo enabled y ya funcionan correctamente. Es la manera en la cual nos funcionaba el servicio IceStorm, poniendo los servidores activados always.

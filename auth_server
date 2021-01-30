@@ -23,7 +23,7 @@ Ice.loadSlice('icegauntlet.ice')
 import IceGauntlet
 
 
-USERS_FILE = 'users.json'
+USERS_FILE = '/tmp/db/users.json'
 PASSWORD_HASH = 'password_hash'
 CURRENT_TOKEN = 'current_token'
 TOKEN_SIZE = 40
@@ -108,10 +108,11 @@ class AuthenticationI(IceGauntlet.Authentication):
         '''Return if token is active'''
         owner = None
         for i in self._users_: # recorremos usuarios
-            for j in self._users_[i]['TOKENS']: # recorremos el token de los usuarios
-                if j == token:
-                    owner = i
-                    break
+            if 'TOKENS' in self._users_[i]:
+                for j in self._users_[i]['TOKENS']: # recorremos el token de los usuarios
+                    if j == token:
+                        owner = i
+                        break
         if owner is not None:
             return owner
         else:

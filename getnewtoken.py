@@ -77,7 +77,7 @@ class Client(Ice.Application):
 if __name__ == "__main__":
 
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print("usage: ./GetNewToken <user> <proxy>")
         sys.exit(1)
 

@@ -1,11 +1,12 @@
 {
-    "tomi": {
-        "TOKENS": [
-            "a75j2pq9Fi3I1hzq9hW9Xy6Eo5ruhnQuMHDoDnjE",
-            "RZdXm7NnV8c6eMpn1q4LcR0ExpscrUL5ldcvoLeW",
-            "bPInNRhrOlmuaaugpJDG32b6Q9HMK9wkRAb1eyPQ"
-        ],
-        "current_token": "bPInNRhrOlmuaaugpJDG32b6Q9HMK9wkRAb1eyPQ",
-        "password_hash": "07123e1f482356c415f684407a3b8723e10b2cbbc0b8fcd6282c49d37c9c1abc"
-    }
+  "pablo": {},
+  "tomasjesus.garcia": {
+    "TOKENS": [
+      "a75j2pq9Fi3I1hzq9hW9Xy6Eo5ruhnQuMHDoDnjE",
+      "RZdXm7NnV8c6eMpn1q4LcR0ExpscrUL5ldcvoLeW",
+      "bPInNRhrOlmuaaugpJDG32b6Q9HMK9wkRAb1eyPQ"
+    ],
+    "current_token": "bPInNRhrOlmuaaugpJDG32b6Q9HMK9wkRAb1eyPQ",
+    "password_hash": "07123e1f482356c415f684407a3b8723e10b2cbbc0b8fcd6282c49d37c9c1abc"
+  }
 }

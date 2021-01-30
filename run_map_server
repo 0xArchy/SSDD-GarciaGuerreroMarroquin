@@ -22,7 +22,7 @@ import uuid
 import IceStorm
 
 global almacen 
-ROOMS_FILE = 'rooms.json'
+ROOMS_FILE = '/tmp/db/rooms.json'
 
 class RoomManagerSync(IceGauntlet.RoomManagerSync):
 
@@ -68,7 +68,6 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
             self._managers_.append(managerId)
 
     def newRoom(self,roomName, managerId, current = None):
-        print("estamos en new room")
         if not self.almacen.room_name_exists(roomName):
             roomdata = self.roomManager.getRoom(roomName)
             self.almacen.addRoom(roomName, roomdata)
