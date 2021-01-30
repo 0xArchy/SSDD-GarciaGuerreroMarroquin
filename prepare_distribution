@@ -6,11 +6,6 @@ rm -r /tmp/IceGauntletApp 2>/dev/null
 
 mkdir -p /tmp/db
 
-# creamos la BD de rooms
-touch /tmp/db/rooms.json & cp rooms.json /tmp/db/rooms.json
-
-cp users.json /tmp/db/users.json 2>/dev/null
-
 mkdir -p /tmp/db/registry /tmp/db/node1/servers /tmp/db/node2/servers
 
 mkdir -p /tmp/IceGauntletApp

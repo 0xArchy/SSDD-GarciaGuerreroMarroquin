@@ -23,7 +23,7 @@ Ice.loadSlice('icegauntlet.ice')
 import IceGauntlet
 
 
-USERS_FILE = '/tmp/db/users.json'
+USERS_FILE = 'users.json'
 PASSWORD_HASH = 'password_hash'
 CURRENT_TOKEN = 'current_token'
 TOKEN_SIZE = 40

@@ -25,21 +25,19 @@ import icegauntlettool
 import IceStorm
 
 global almacen
-ROOMS_FILE = '/tmp/db/rooms.json'
+#ROOMS_FILE = '/tmp/db/rooms.json'
 
 class RoomManagerSync(IceGauntlet.RoomManagerSync):
     '''RoomManagerSync Suscriber Class '''
-    def __init__(self, roomManager,adapter, topic_mgr):
-        global almacen
+    def __init__(self, roomManager,adapter, topic_mgr, almacen):
         self.topicroom = None
-        self._managers_ = []
+        self._managers_ = {}
         self.adapter = adapter
         self.topic_mgr = topic_mgr
         self.roomManager = roomManager
+        self.id = self.roomManager.id
+        self.almacen = almacen
         self.crearcanal()
-        self.id = str(uuid.uuid4())
-        self.almacen = Almacen(self.id)
-        almacen = self.almacen
         self.room_manager_proxy = self.adapter.addWithUUID(roomManager)
         self.publisher = self.topicroom.getPublisher()
         self.printer = IceGauntlet.RoomManagerSyncPrx.uncheckedCast(self.publisher)
@@ -65,7 +63,7 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
     def hello(self, manager, manager_id,current = None):
         '''hello method'''
         print("Hola, soy {}".format(self.id))
-        self._managers_.append(manager_id)
+        self._managers_[manager_id] = manager
         self.printer.announce(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy),
             self.id)
 
@@ -73,12 +71,17 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
         '''announce method'''
         if self.id != manager_id:
             print("Anounce, yo soy {}".format(manager_id))
-            self._managers_.append(manager_id)
+            self._managers_[manager_id] = manager
 
     def newRoom(self,room_name, manager_id, current = None):
         '''create new room method'''
+        #if not self.almacen.room_name_exists(room_name):
+        #    room_data = self.roomManager.getRoom(room_name)
+        #    self.almacen.addRoom(room_name, room_data)
+        #
         if not self.almacen.room_name_exists(room_name):
-            room_data = self.roomManager.getRoom(room_name)
+            room_data = self._managers_[manager_id].getRoom(room_name)
+            print(room_data)
             self.almacen.addRoom(room_name, room_data)
 
     def removedRoom(self,room_name, current = None):
@@ -92,46 +95,53 @@ class RoomManager(IceGauntlet.RoomManager):
     pass proxy authentication for parameter from run
     '''
     def __init__(self,authentication,adapter, topic_mgr):
-        self._rooms_ = {}
+        global almacen
+        #self._rooms_ = {}
+        self.id = str(uuid.uuid4())
+        self.almacen = Almacen(self.id)
+        almacen = self.almacen
         self.adapter = adapter
         self.topic_mgr = topic_mgr
         self.authentication = authentication
         self.crearRoomSync()
-        if os.path.exists(ROOMS_FILE):
-            self.refresh()
-        else:
-            self.__commit__()
+        #if os.path.exists(ROOMS_FILE):
+        #    self.refresh()
+        #else:
+        #    self.__commit__()
 
     def crearRoomSync(self):
         '''crate room method'''
-        self.roomsync = RoomManagerSync(self,self.adapter, self.topic_mgr)
+        self.roomsync = RoomManagerSync(self,self.adapter, self.topic_mgr,self.almacen)
 
     def getRoom(self, roomName, current = None):
         '''Return room method'''
         self.refresh()
-        if roomName not in self._rooms_:
+        if roomName not in self.almacen.getRooms():
             raise IceGauntlet.RoomNotExists()
-        return str(self._rooms_[roomName])
+        return str(self.almacen.getRooms()[roomName])
 
     def room_name_exists(self,name):
         '''
         check if the room name already exits, its not allowed to have two rooms with same name
         '''
-        for room in self._rooms_:
-            if name == room:
-                return True
-        return False
+        #for room in self.almacen.getRooms():
+        #    if name == room:
+        #        return True
+        #return False
+        return self.almacen.room_name_exists(name)
 
     def refresh(self):
         '''maps update method'''
-        logging.debug('Reloading user database')
-        with open(ROOMS_FILE,'r') as contents:
-            self._rooms_ = json.load(contents)
+        #logging.debug('Reloading user database')
+        #with open(ROOMS_FILE,'r') as contents:
+        #    self._rooms_ = json.load(contents)
+        self.almacen.refresh()
 
     def __commit__(self):
-        logging.debug('Room database updated!')
-        with open(ROOMS_FILE,'w') as contents:
-            json.dump(self._rooms_, contents, indent=4, sort_keys=True)
+        #logging.debug('Room database updated!')
+        #with open(ROOMS_FILE,'w') as contents:
+        #    json.dump(self._rooms_, contents, indent=4, sort_keys=True)
+        self.almacen.__commit__()
 
     def publish(self, token, room_data, current=None):
         '''check if user exists'''
@@ -147,8 +157,8 @@ class RoomManager(IceGauntlet.RoomManager):
             }
 
             if not self.room_name_exists(nombre):
-                self._rooms_[nombre] = data
-                self.__commit__()
+                self.almacen.getRooms()[nombre] = data
+                self.almacen.__commit__()
                 self.roomsync.getPrinter().newRoom(nombre, self.roomsync.id)
             else:
                 raise IceGauntlet.RoomAlreadyExists()
@@ -162,9 +172,9 @@ class RoomManager(IceGauntlet.RoomManager):
         if owner:
             #contain = json.loads(room_data)
             if self.room_name_exists(room_name):
-                if self.authentication.getOwner(self._rooms_[room_name]['token']) == owner:
-                    del self._rooms_[room_name]
-                    self.__commit__()
+                if self.authentication.getOwner(self.almacen.getRooms()[room_name]['token']) == owner:
+                    del self.almacen.getRooms()[room_name]
+                    self.almacen.__commit__()
                     self.roomsync.getPrinter().removedRoom(room_name)
                 else:
                     raise IceGauntlet.Unauthorized()
@@ -180,18 +190,18 @@ class Almacen():
         # construimos el nombre del almacen
         self.rooms_file = 'Almacen{}'.format(idalmacen[:5])
         self._rooms_ = {}
-        self.inicioAlmacen()
+        #self.inicioAlmacen()
         if os.path.exists(self.rooms_file):
             self.refresh()
         else:
             self.__commit__()
 
-    def inicioAlmacen(self):
-        '''update Almacen method'''
-        logging.debug('Reloading user database')
-        with open(ROOMS_FILE,'r') as contents:
-            self._rooms_ = json.load(contents)
-        self.__commit__() # lo cargamos en nuestro almacen
+    #def inicioAlmacen(self):
+    #    '''update Almacen method'''
+    #    logging.debug('Reloading user database')
+    #    with open(ROOMS_FILE,'r') as contents:
+    #        self._rooms_ = json.load(contents)
+    #    self.__commit__() # lo cargamos en nuestro almacen
 
     def refresh(self):
         '''
@@ -206,9 +216,9 @@ class Almacen():
         with open(self.rooms_file,'w') as contents:
             json.dump(self._rooms_, contents, indent=4, sort_keys=True)
 
-    def setRooms(self, rooms):
-        '''set room method'''
-        self._rooms_=rooms
+    #def setRooms(self, rooms):
+    #    '''set room method'''
+    #    self._rooms_=rooms
 
     def room_name_exists(self,name):
         '''
