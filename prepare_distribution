@@ -4,13 +4,17 @@
 rm -r /tmp/db 2>/dev/null
 rm -r /tmp/IceGauntletApp 2>/dev/null
 
+mkdir -p /tmp/db
+
+mkdir -p /tmp/db/registry /tmp/db/node1/servers /tmp/db/node2/servers
+
 mkdir -p /tmp/IceGauntletApp
 cp -r * /tmp/IceGauntletApp
 /usr/bin/icepatch2calc /tmp/IceGauntletApp
 
-mkdir -p /tmp/db
+#mkdir -p /tmp/db
 
-mkdir -p /tmp/db/registry /tmp/db/node1/servers /tmp/db/node2/servers
+#mkdir -p /tmp/db/registry /tmp/db/node1/servers /tmp/db/node2/servers
 #icegridnode --Ice.Config=node1.config esto lo hace Tobias en su SO
 #icegridnode --Ice.Config=node2.config
 

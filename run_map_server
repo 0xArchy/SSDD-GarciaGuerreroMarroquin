@@ -68,6 +68,7 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
             self._managers_.append(managerId)
 
     def newRoom(self,roomName, managerId, current = None):
+        print("estamos en new room")
         if not self.almacen.room_name_exists(roomName):
             roomdata = self.roomManager.getRoom(roomName)
             self.almacen.addRoom(roomName, roomdata)
@@ -439,19 +440,19 @@ class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
 class Server(Ice.Application):
 
     def get_topic_manager(self,properties):
-        key = 'IceStormAdmin.TopicManager.Default'
+        key = 'IceStorm.TopicManager.Proxy'
         #proxy = self.communicator().propertyToProxy(properties.getProperty(key))
-        proxy = self.communicator().stringToProxy(properties.getProperty(key))
+        #proxy = self.communicator().stringToProxy(properties.getProperty(key))
+        proxy = self.communicator().stringToProxy('IceGauntletApp.IceStorm/TopicManager')
         if proxy is None:
             print("property {} not set".format(key))
             return None
 
-        print("Using IceStorm in: '%s'" % key)
+        #print("Using IceStorm in: '%s'" % key)
         return IceStorm.TopicManagerPrx.checkedCast(proxy)
     
 
     def run(self, argv):
-        
         logging.debug('Initializing server...')
 
         atributes = self.communicator().getProperties()
@@ -463,44 +464,51 @@ class Server(Ice.Application):
         
         #check authentication proxy
         #proxyauth = self.communicator().stringToProxy(argv[1])
-        proxyauth = self.communicator().stringToProxy(atributes.getProperty('AuthProxy'))
+        proxyauth = self.communicator().stringToProxy(atributes.getProperty('ProxyAuth'))
         authentication = IceGauntlet.AuthenticationPrx.checkedCast(proxyauth)
         if not authentication:
             raise RuntimeError('Invalid proxy')
 
         adapter = self.communicator().createObjectAdapter('ServiceAdapter')
         servant = RoomManager(authentication,adapter,topic_mgr)
+
         # signal.signal(signal.SIGUSR1, servant.refresh)
-        room_service_identity = self.communicator().stringToIdentity('RoomManager')
-        adapter.add(servant,room_service_identity)
-        proxy = adapter.createProxy(room_service_identity)
-        servant_game = Dungeon(adapter)
-        game_identity = self.communicator().stringToIdentity('DungeonArea')
-        servant_Game_Sync = DungeonAreaSync(servant_game.getDungeonArea())
-        #game_sync_identity = self.communicator().stringToIdentity('DungeonAreaSync')
-        adapter.add(servant_game,game_identity)
-        subscriber = adapter.addWithUUID(servant_Game_Sync)
+        if 'RoomManager' in atributes.getProperty('Ice.ProgramName'):
+            room_service_identity = self.communicator().stringToIdentity(atributes.getProperty('Identity'))
+            adapter.add(servant,room_service_identity)
+            proxy = adapter.createProxy(room_service_identity)
+            print('"{}"'.format(proxy), flush=True)
+        if 'RoomManager' not in atributes.getProperty('Ice.ProgramName'):
+            servant_game = Dungeon(adapter)
+            game_identity = self.communicator().stringToIdentity('Dungeon')
+            servant_Game_Sync = DungeonAreaSync(servant_game.getDungeonArea())
+            #game_sync_identity = self.communicator().stringToIdentity('DungeonAreaSync')
+            adapter.add(servant_game,game_identity)
 
-        topic_name = "GameTopic"
-        qos = {}
-        try:
-            topic = topic_mgr.retrieve(topic_name)
-        except IceStorm.NoSuchTopic:
-            topic = topic_mgr.create(topic_name)
+            subscriber = adapter.addWithUUID(servant_Game_Sync)
 
-        topic.subscribeAndGetPublisher(qos, subscriber)
+            topic_name = "GameTopic"
+            qos = {}
+            try:
+                topic = topic_mgr.retrieve(topic_name)
+            except IceStorm.NoSuchTopic:
+                topic = topic_mgr.create(topic_name)
 
-        proxygame = adapter.createProxy(game_identity)
+            topic.subscribeAndGetPublisher(qos, subscriber)
+            proxygame = adapter.createProxy(game_identity)
+
+            print('"{}"'.format(proxygame), flush=True)
+
         adapter.activate()
-        logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
-        print('"{}"'.format(proxy), flush=True)
-        print('"{}"'.format(proxygame), flush=True)
+        #logging.debug('AdapterGame ready, servant proxy: {}'.format(proxy))
+        #print('"{}"'.format(proxy), flush=True)
+        #print('"{}"'.format(proxygame), flush=True)
 
         logging.debug('Entering server loop...')
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
-
-        topic.unsubscribe(subscriber)
+        if 'RoomManager' not in atributes.getProperty('Ice.ProgramName'):
+            topic.unsubscribe(subscriber)
 
         return 0
 

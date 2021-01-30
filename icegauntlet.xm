@@ -43,7 +43,7 @@
          </service>
       </service-template>
       <server-template id="DungeonTemplate">
-         <server id="Dungeon" activation="always" exe="./run_map_server" pwd="${application.distrib}">
+         <server id="Dungeon" activation="manual" exe="./run_map_server" pwd="${application.distrib}">
             <properties>
                <property name="Ice.StdOut" value="${application.distrib}/dungeon-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.Dungeon"/>
@@ -78,10 +78,10 @@
          </icebox>
       </server-template>
       <server-template id="IceGauntletAuthTemplate">
-         <server id="AuthServer" activation="on-demand" exe="./auth_server" pwd="${application.distrib}">
+         <server id="AuthServer" activation="on-demand" exe="icegauntlet_auth_server/auth_server" pwd="${application.distrib}">
             <properties>
                <property name="identity" value="default"/>
-               <property name="Ice.StdOut" value="${application.distrib}auth-server-out.txt"/>
+               <property name="Ice.StdOut" value="${application.distrib}/serverauth-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.Auth"/>
                <property name="Ice.StdErr" value="${application.distrib}/auth_server-err.txt"/>
             </properties>
@@ -128,14 +128,14 @@
       </server-template>
       <server-template id="RoomManagerTemplate">
          <parameter name="index"/>
-         <server id="RoomManagerTemplate${index}" activation="always" exe="./run_map_server" pwd="${application.distrib}">
+         <server id="RoomManagerTemplate${index}" activation="manual" exe="./run_map_server" pwd="${application.distrib}">
             <properties>
                <property name="Ice.StdOut" value="${application.distrib}/room${index}-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.RoomManager${index}"/>
                <property name="Ice.StdErr" value="${application.distrib}/room${index}-err.txt"/>
                <property name="ProxyAuth" value="default -t -e 1.1 @ AuthServer.AuthenticationAdapter"/>
             </properties>
-            <adapter name="ServiceAdapter" endpoints="default" id="${server}.ServiceAdapter">
+            <adapter name="ServiceAdapter" endpoints="default" id="${server}.ServiceAdapter" replica-group="ReplicatedRoomManager">
                <object identity="room_manager${index}" type="::IceGauntlet::RoomManager" property="Identity"/>
             </adapter>
          </server>
@@ -149,7 +149,6 @@
          <server-instance template="IceGauntletAuthTemplate"/>
          <server-instance template="IcePatch2" directory="/tmp/IceGauntletApp"/>
          <server-instance template="IceStorm"/>
-         <server-instance template="RoomManagerTemplate" index="1"/>
       </node>
       <node name="node2">
          <description>Nodo 2

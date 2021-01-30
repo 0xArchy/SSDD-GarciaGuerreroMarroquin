@@ -48,7 +48,7 @@ class Client(Ice.Application):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("usage: ./upload_map <proxy> <token> <roomdata>")
         sys.exit(1)
     sys.exit(Client().main(sys.argv))
