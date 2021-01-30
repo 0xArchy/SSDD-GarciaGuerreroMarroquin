@@ -302,7 +302,7 @@ class Item(IceGauntlet.Item):
         '''Return item id method'''
         return self.itemId
 
-    def itemType(self):
+    def getItemType(self):
         '''Return item type method'''
         return self.itemType
 
