@@ -13,15 +13,15 @@ import os.path
 import logging
 import signal
 import random
+import pickle
+import uuid
 import Ice
 Ice.loadSlice('Icegauntlet.ice')
 import IceGauntlet
 import icegauntlettool
-import pickle
-import uuid
 import IceStorm
 
-global almacen 
+global almacen
 ROOMS_FILE = '/tmp/db/rooms.json'
 
 class RoomManagerSync(IceGauntlet.RoomManagerSync):
@@ -75,8 +75,6 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
     def removedRoom(self,roomName, current = None):
         if self.almacen.room_name_exists(roomName):
             self.almacen.removeRoom(roomName)
-        
-
 
 class RoomManager(IceGauntlet.RoomManager):
 
@@ -94,14 +92,13 @@ class RoomManager(IceGauntlet.RoomManager):
         else:
             self.__commit__()
 
-
     def crearRoomSync(self):
         self.roomsync = RoomManagerSync(self,self.adapter, self.topic_mgr)
 
     def getRoom(self, roomName, current = None):
         self.refresh()
         if roomName not in self._rooms_:
-            raise IceGauntlet.RoomNotExists() 
+            raise IceGauntlet.RoomNotExists()
         return str(self._rooms_[roomName])
 
     def room_name_exists(self,name):
@@ -114,9 +111,7 @@ class RoomManager(IceGauntlet.RoomManager):
         return False
 
     def refresh(self):
-    
         # maps update
-        
         logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
@@ -167,7 +162,6 @@ class RoomManager(IceGauntlet.RoomManager):
         else:
             raise IceGauntlet.Unauthorized()
 
-
 class Almacen():
 
     def __init__(self, idalmacen):
@@ -179,11 +173,9 @@ class Almacen():
             self.refresh()
         else:
             self.__commit__()
-    
+
     def inicioAlmacen(self):
-    
         # maps update
-        
         logging.debug('Reloading user database')
         with open(ROOMS_FILE,'r') as contents:
             self._rooms_ = json.load(contents)
@@ -237,9 +229,6 @@ class Almacen():
     def ImprimirMapas(self):
         for i in self._rooms_:
             print(i)
-
-
-    
 
 class Dungeon(IceGauntlet.Dungeon):
 
@@ -300,10 +289,10 @@ class Item(IceGauntlet.Item):
 
     def itemType(self):
         return self.itemType
-    
+
     def getpositionX(self):
         return self.positionX
-    
+
     def getpositionY(self):
         return self.positionY
 
@@ -317,7 +306,7 @@ class Actor(IceGauntlet.Actor):
 
     def getActorId(self):
         return self.actorId
-    
+
     def __str__(self):
         return '{}:{}'.format(self.actorId, self.attributes)
 
@@ -353,12 +342,12 @@ class DungeonArea(IceGauntlet.DungeonArea):
         for i in self.objects:
             if i.getitemId() == ObjectId:
                 self.objects.remove(i)
-    
+
     def removeActor(self, actorId):
         for i in self.actors:
             if i.getActorId() == actorId:
                 self.actors.remove(i)
-        
+
     def obtenerItems(self):
         self.objects = []
         self.objectssinid = icegauntlettool.get_map_objects(json.dumps(self.map))
@@ -367,7 +356,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
             itemaxu = Item(str(j),int(i[0]),int(i[1][0]),int(i[1][1]))
             self.objects.append(itemaxu)
             j += 1
-            
+
         return self.objects
 
     def isObject(self, id):
@@ -393,7 +382,6 @@ class DungeonArea(IceGauntlet.DungeonArea):
             for i in self.objects:
                 if i.getitemId() == j:
                     self.objects.remove(i)
-            
 
     def getActors(self, current=None):
         return self.actors
@@ -429,6 +417,7 @@ class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
         self._parent_ = DungeonArea
 
     def fireEvent(self,event,senderId,current=None):
+        '''method firts event'''
         try:
             event = pickle.loads(event)
         except Exception:
@@ -437,6 +426,8 @@ class DungeonAreaSync(IceGauntlet.DungeonAreaSync):
 
 
 class Server(Ice.Application):
+
+    '''Server Class'''
 
     def get_topic_manager(self,properties):
         key = 'IceStorm.TopicManager.Proxy'
@@ -449,7 +440,6 @@ class Server(Ice.Application):
 
         #print("Using IceStorm in: '%s'" % key)
         return IceStorm.TopicManagerPrx.checkedCast(proxy)
-    
 
     def run(self, argv):
         logging.debug('Initializing server...')
@@ -460,7 +450,7 @@ class Server(Ice.Application):
         if not topic_mgr:
             print('Invalid proxy')
             return 2
-        
+
         #check authentication proxy
         #proxyauth = self.communicator().stringToProxy(argv[1])
         proxyauth = self.communicator().stringToProxy(atributes.getProperty('ProxyAuth'))
@@ -471,7 +461,7 @@ class Server(Ice.Application):
         adapter = self.communicator().createObjectAdapter('ServiceAdapter')
         servant = RoomManager(authentication,adapter,topic_mgr)
 
-        # signal.signal(signal.SIGUSR1, servant.refresh)
+        signal.signal(signal.SIGUSR1, servant.refresh)
         if 'RoomManager' in atributes.getProperty('Ice.ProgramName'):
             room_service_identity = self.communicator().stringToIdentity(atributes.getProperty('Identity'))
             adapter.add(servant,room_service_identity)
@@ -510,7 +500,6 @@ class Server(Ice.Application):
             topic.unsubscribe(subscriber)
 
         return 0
-
 
 if __name__ == '__main__':
 
