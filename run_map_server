@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 #pylint: disable-msg=e0401
 #pylint: disable-msg=c0413
+#pylint: disable-msg=w0613
+#pylint: disable-msg=c0103
+
 
 '''
-Script that runs the server
+Script that runs server
 '''
 
 import sys
@@ -44,7 +47,7 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
 
     def crearcanal(self):
         '''create new channel method'''
-        subscriberRoom = self.adapter.addWithUUID(self)
+        subscriber_room = self.adapter.addWithUUID(self)
 
         topic_name_room = "RoomManagerSyncChannel"
         qosroom = {}
@@ -53,34 +56,35 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
         except IceStorm.NoSuchTopic:
             self.topicroom = self.topic_mgr.create(topic_name_room)
 
-        self.topicroom.subscribeAndGetPublisher(qosroom, subscriberRoom)
+        self.topicroom.subscribeAndGetPublisher(qosroom, subscriber_room)
 
     def getPrinter(self):
         '''Return printer method'''
         return self.printer
 
-    def hello(self, manager, managerId,current = None):
+    def hello(self, manager, manager_id,current = None):
         '''hello method'''
         print("Hola, soy {}".format(self.id))
-        self._managers_.append(managerId)
-        self.printer.announce(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy),self.id)
+        self._managers_.append(manager_id)
+        self.printer.announce(IceGauntlet.RoomManagerPrx.checkedCast(self.room_manager_proxy),
+            self.id)
 
-    def announce(self, manager, managerId,current = None):
+    def announce(self, manager, manager_id,current = None):
         '''announce method'''
-        if self.id != managerId:
-            print("Anounce, yo soy {}".format(managerId))
-            self._managers_.append(managerId)
+        if self.id != manager_id:
+            print("Anounce, yo soy {}".format(manager_id))
+            self._managers_.append(manager_id)
 
-    def newRoom(self,roomName, managerId, current = None):
+    def newRoom(self,room_name, manager_id, current = None):
         '''create new room method'''
-        if not self.almacen.room_name_exists(roomName):
-            roomdata = self.roomManager.getRoom(roomName)
-            self.almacen.addRoom(roomName, roomdata)
+        if not self.almacen.room_name_exists(room_name):
+            room_data = self.roomManager.getRoom(room_name)
+            self.almacen.addRoom(room_name, room_data)
 
-    def removedRoom(self,roomName, current = None):
+    def removedRoom(self,room_name, current = None):
         '''delete room method'''
-        if self.almacen.room_name_exists(roomName):
-            self.almacen.removeRoom(roomName)
+        if self.almacen.room_name_exists(room_name):
+            self.almacen.removeRoom(room_name)
 
 class RoomManager(IceGauntlet.RoomManager):
 
@@ -142,12 +146,12 @@ class RoomManager(IceGauntlet.RoomManager):
                 'data': contain['data']
             }
 
-            if self.room_name_exists(nombre):
-                raise IceGauntlet.RoomAlreadyExists()
-            else:
+            if not self.room_name_exists(nombre):
                 self._rooms_[nombre] = data
                 self.__commit__()
                 self.roomsync.getPrinter().newRoom(nombre, self.roomsync.id)
+            else:
+                raise IceGauntlet.RoomAlreadyExists()
 
         else:
             raise IceGauntlet.Unauthorized()
@@ -255,25 +259,20 @@ class Dungeon(IceGauntlet.Dungeon):
         self.dungeonarea = DungeonArea(self.adapter)
         self.proxy = self.adapter.addWithUUID(self.dungeonarea)
 
-    """def refresh(self):
-        '''
-        refresh the rooms of the DB
-        '''
-        #logging.debug('Reloading user database')
-        with open(ROOMS_FILE,'r') as contents:
-            self._rooms_ = json.load(contents)
-    """
-    """
-    def getRoom(self,current=None):
-        '''
-        get a room from the DB
-        '''
-        map = {}
-        if len(self._rooms_) == 0:
-            raise IceGauntlet.RoomNotExists()
-        lab = random.choice(list(self._rooms_.keys()))
-        map['data'] = self._rooms_[lab]['data']
-        map['room'] = lab
+    #def refresh(self):
+    #    '''refresh the rooms of the DB'''
+    #    #logging.debug('Reloading user database')
+    #    with open(ROOMS_FILE,'r') as contents:
+    #        self._rooms_ = json.load(contents)
+
+    #def getRoom(self,current=None):
+    #    '''get a room from the DB'''
+    #    map = {}
+    #    if len(self._rooms_) == 0:
+    #        raise IceGauntlet.RoomNotExists()
+    #    lab = random.choice(list(self._rooms_.keys()))
+    #    map['data'] = self._rooms_[lab]['data']
+    #    map['room'] = lab
         #i = 0
         #for room in data:
         #    if i == lab:
@@ -281,8 +280,8 @@ class Dungeon(IceGauntlet.Dungeon):
         #        map['room'] = room
         #    else:
         #        i+=1
-        return json.dumps(map)
-    """
+    #    return json.dumps(map)
+
     def getDungeonArea(self):
         '''Return dungeon method'''
         return self.dungeonarea
@@ -336,6 +335,12 @@ class DungeonArea(IceGauntlet.DungeonArea):
     '''Dungeon Area Class'''
     def __init__(self,adapter):
         global almacen
+        self.dungeonarea = None
+        self.items = None
+        self.map = None
+        self.proxy = None
+        self.objects = None
+        self.objectssinid = None
         self.almacen = almacen
         self.adapter = adapter
         self.actors = []
@@ -437,7 +442,7 @@ class DungeonArea(IceGauntlet.DungeonArea):
             self.addActor(args_event[0],json.dumps(args_event[1]))
         elif type_event == "kill_object":
             if(self.isObject(args_event[0])):
-                self.removeObject(azrgs_event[0])
+                self.removeObject(args_event[0])
             else:
                 self.removeActor(args_event[0])
         elif type_event == "open_door":
@@ -499,7 +504,8 @@ class Server(Ice.Application):
 
         signal.signal(signal.SIGUSR1, servant.refresh)
         if 'RoomManager' in atributes.getProperty('Ice.ProgramName'):
-            room_service_identity = self.communicator().stringToIdentity(atributes.getProperty('Identity'))
+            room_service_identity = self.communicator().stringToIdentity(
+                atributes.getProperty('Identity'))
             adapter.add(servant,room_service_identity)
             proxy = adapter.createProxy(room_service_identity)
             print('"{}"'.format(proxy), flush=True)
@@ -539,9 +545,9 @@ class Server(Ice.Application):
 
 if __name__ == '__main__':
 
-    '''if len(sys.argv) != 3:
-        print("usage: ./Server.py <proxy>")
-        sys.exit(0)
-    '''
+    #if len(sys.argv) != 3:
+    #    print("usage: ./Server.py <proxy>")
+    #    sys.exit(0)
+
     app = Server()
     sys.exit(app.main(sys.argv))
