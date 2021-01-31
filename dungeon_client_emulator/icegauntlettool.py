@@ -84,13 +84,11 @@ def search_adjacent_door(items, position, visited=None):
     '''Return the list of door tiles adjacent to a given one'''
 
     def door_at(position):
-        
         for item_id in items:
             item_type, item_position = items[item_id]
             if position == item_position:
                 if item_type in DOORS:
                     return item_id, item_type
-        
         return None, None
 
     if not visited:

@@ -38,7 +38,7 @@ class Client(Ice.Application):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("usage: ./client_get_room.py <proxy>")
         sys.exit(1)
     sys.exit(Client().main(sys.argv))

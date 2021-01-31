@@ -7,11 +7,7 @@
 Script for change user password
 '''
 
-import hashlib
 import sys
-import time
-import getpass
-from pwn import log
 import Ice
 Ice.loadSlice("Icegauntlet.ice")
 import IceGauntlet
@@ -30,28 +26,17 @@ class Client(Ice.Application):
             raise RuntimeError('Invalid proxy')
 
         token = argv[2]
-        '''
-		#create the hash
-        if current_password:
-            current_password = hashlib.sha256(current_password.encode()).hexdigest()
-        else:
-            current_password = None
 
-        new_password = hashlib.sha256(new_password.encode()).hexdigest()
-        #get a token
-        variable_progress = log.progress('Changing password..')
-        time.sleep(1)
-        '''
         try:
             user = authentication.getOwner(token)
             print(user)
         except IceGauntlet.Unauthorized:
-            variable_progress.failure("Password not valid")
+            print("Password not valid")
 
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print("usage: ./ChangePassword <proxy> <token>")
         sys.exit(1)
     sys.exit(Client().main(sys.argv))

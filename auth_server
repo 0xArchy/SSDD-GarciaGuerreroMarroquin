@@ -3,6 +3,7 @@
 #
 # pylint: disable=W1203
 # pylint: disable=W0613
+# pylint: disable-msg=c0103
 
 '''
    ICE Gauntlet Token Server
@@ -17,7 +18,7 @@ import logging
 import os.path
 
 import Ice
-Ice.loadSlice('icegauntlet.ice')
+Ice.loadSlice('Icegauntlet.ice')
 # pylint: disable=E0401
 # pylint: disable=C0413
 import IceGauntlet
@@ -108,10 +109,11 @@ class AuthenticationI(IceGauntlet.Authentication):
         '''Return if token is active'''
         owner = None
         for i in self._users_: # recorremos usuarios
-            for j in self._users_[i]['TOKENS']: # recorremos el token de los usuarios
-                if j == token:
-                    owner = i
-                    break
+            if 'TOKENS' in self._users_[i]:
+                for j in self._users_[i]['TOKENS']: # recorremos el token de los usuarios
+                    if j == token:
+                        owner = i
+                        break
         if owner is not None:
             return owner
         else:
