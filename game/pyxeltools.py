@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
+#pylint: disable-msg=w0613
+#pylint: disable-msg=c0103
 
 '''
     Tools for pyxel

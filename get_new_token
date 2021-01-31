@@ -14,7 +14,7 @@ except ImportError:
     sys.exit(1)
 
 # Define command to request new token
-_COMMAND_ = '/usr/bin/python3 ./getnewtoken.py "%(user)s" "%(auth_proxy)s"'
+_COMMAND_ = './getnewtoken.py "%(user)s" "%(auth_proxy)s" --Ice.Config=locator.config'
 
 # Message used by authentication client when asking for a password
 _PASSWORD_MESSAGE_ = 'Enter password:'
