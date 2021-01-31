@@ -81,8 +81,12 @@ class RoomManagerSync(IceGauntlet.RoomManagerSync):
         #
         if not self.almacen.room_name_exists(room_name):
             room_data = self._managers_[manager_id].getRoom(room_name)
-            print(room_data)
-            self.almacen.addRoom(room_name, room_data)
+            contain = json.loads(room_data)
+            data = {
+                'token': contain['token'],
+                'data': contain['data']
+            }
+            self.almacen.addRoom(room_name, data)
 
     def removedRoom(self,room_name, current = None):
         '''delete room method'''
@@ -118,7 +122,7 @@ class RoomManager(IceGauntlet.RoomManager):
         self.refresh()
         if roomName not in self.almacen.getRooms():
             raise IceGauntlet.RoomNotExists()
-        return str(self.almacen.getRooms()[roomName])
+        return json.dumps(self.almacen.getRooms()[roomName])
 
     def room_name_exists(self,name):
         '''
@@ -157,8 +161,7 @@ class RoomManager(IceGauntlet.RoomManager):
             }
 
             if not self.room_name_exists(nombre):
-                self.almacen.getRooms()[nombre] = data
-                self.almacen.__commit__()
+                self.almacen.addRoom(nombre,data)
                 self.roomsync.getPrinter().newRoom(nombre, self.roomsync.id)
             else:
                 raise IceGauntlet.RoomAlreadyExists()
@@ -172,9 +175,8 @@ class RoomManager(IceGauntlet.RoomManager):
         if owner:
             #contain = json.loads(room_data)
             if self.room_name_exists(room_name):
-                if self.authentication.getOwner(self.almacen.getRooms()[room_name]['token']) == owner:
-                    del self.almacen.getRooms()[room_name]
-                    self.almacen.__commit__()
+                if self.authentication.getOwner(self.almacen.getToken(room_name)) == owner:
+                    self.almacen.removeRoom(room_name)
                     self.roomsync.getPrinter().removedRoom(room_name)
                 else:
                     raise IceGauntlet.Unauthorized()
@@ -219,6 +221,11 @@ class Almacen():
     #def setRooms(self, rooms):
     #    '''set room method'''
     #    self._rooms_=rooms
+    def getToken(self, room_name):
+        '''return a room token'''
+        print(self._rooms_[room_name])
+        return self._rooms_[room_name]['token']
+
 
     def room_name_exists(self,name):
         '''
@@ -228,6 +235,10 @@ class Almacen():
             if name == room:
                 return True
         return False
+
+    def isVacio(self):
+        '''Check if self.__rooms__ is empty'''
+        return len(self._rooms_) == 0
 
     def roomdataexists(self,data):
         '''
@@ -298,6 +309,8 @@ class Dungeon(IceGauntlet.Dungeon):
 
     def getEntrance(self, current=None):
         '''Return dungeon entrance method'''
+        if self.dungeonarea.almacen.isVacio():
+            raise IceGauntlet.RoomNotExists()
         return IceGauntlet.DungeonAreaPrx.checkedCast(self.proxy)
 
 class Item(IceGauntlet.Item):
