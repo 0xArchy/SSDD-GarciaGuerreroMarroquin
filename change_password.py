@@ -54,7 +54,7 @@ class Client(Ice.Application):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print("usage: ./ChangePassword <proxy> <user>")
         sys.exit(1)
     sys.exit(Client().main(sys.argv))

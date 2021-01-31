@@ -3,6 +3,7 @@
 #
 # pylint: disable=W1203
 # pylint: disable=W0613
+# pylint: disable-msg=c0103
 
 '''
    ICE Gauntlet Token Server
@@ -17,7 +18,7 @@ import logging
 import os.path
 
 import Ice
-Ice.loadSlice('icegauntlet.ice')
+Ice.loadSlice('Icegauntlet.ice')
 # pylint: disable=E0401
 # pylint: disable=C0413
 import IceGauntlet
